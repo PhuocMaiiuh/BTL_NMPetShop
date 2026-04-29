@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -17,10 +18,12 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminProductForm from './pages/admin/AdminProductForm';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
+import AdminMessages from './pages/admin/AdminMessages';
 
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AuthProvider>
         <CartProvider>
           <Routes>
@@ -68,6 +71,7 @@ function App() {
             <Route path="/admin/san-pham/them" element={<AdminProductForm />} />
             <Route path="/admin/san-pham/sua/:id" element={<AdminProductForm />} />
             <Route path="/admin/khuyen-mai" element={<AdminDiscounts />} />
+            <Route path="/admin/tin-nhan" element={<AdminMessages />} />
           </Route>
           </Routes>
         </CartProvider>

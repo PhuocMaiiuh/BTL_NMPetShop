@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiEdit2, FiExternalLink } from 'react-icons/fi';
+import { FiEdit2, FiExternalLink, FiCamera } from 'react-icons/fi';
+import { useAuth } from '../contexts/AuthContext';
 
 const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
-  const user = {
-    name: 'Nguyễn Văn A',
-    email: 'nguyenvana@example.com',
-    phone: '0901234567',
-    birthday: '15/08/1995',
-    address: '123 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face',
-    memberLevel: 'Thành viên Bạc',
+  const { user, updateUser } = useAuth();
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      updateUser({ avatar: url });
+    }
   };
 
   const orders = [
@@ -29,7 +30,20 @@ const ProfilePage = () => {
       {/* Profile Card */}
       <div className="bg-white rounded-xl border border-border p-6 mb-8">
         <div className="flex items-start gap-6">
-          <img src={user.avatar} alt={user.name} className="w-20 h-20 rounded-full object-cover border-4 border-primary/20" />
+          <div className="relative group shrink-0">
+            {user?.avatar ? (
+              <img src={user.avatar} alt={user.name} className="w-20 h-20 rounded-full object-cover border-4 border-primary/20 bg-white" />
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-primary text-white flex items-center justify-center text-3xl font-bold border-4 border-primary/20">
+                {user?.name?.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <label className="absolute inset-0 bg-black/50 text-white rounded-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity overflow-hidden">
+               <FiCamera size={20} />
+               <span className="text-[10px] mt-1 font-medium">Thay ảnh</span>
+               <input type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} />
+            </label>
+          </div>
           <div>
             <h2 className="text-xl font-bold text-text-dark">{user.name}</h2>
             <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full mt-1">{user.memberLevel}</span>

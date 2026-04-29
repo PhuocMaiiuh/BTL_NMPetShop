@@ -17,7 +17,7 @@ const PromoBanner = () => {
               Giúp bạn cưỡi cưới thêm thêm thoải mái và khỏe mạnh.
             </p>
             <Link
-              to="/san-pham"
+              to="/"
               className="inline-flex items-center gap-2 px-6 py-2.5 bg-white text-emerald-700 font-semibold rounded-lg text-sm hover:bg-emerald-50 transition-colors duration-200"
             >
               Mua ngay

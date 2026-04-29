@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { FiFilter, FiGrid, FiList, FiChevronDown } from 'react-icons/fi';
 
@@ -64,6 +64,15 @@ const healthCategories = [
   { id: 'health-tool', label: 'Dụng cụ cắt tỉa' }
 ];
 
+const priceRanges = [
+  { id: 'price-1', label: 'Dưới 50.000đ', min: 0, max: 49999 },
+  { id: 'price-2', label: 'Từ 50.000đ đến 100.000đ', min: 50000, max: 100000 },
+  { id: 'price-3', label: 'Từ 100.000đ đến 200.000đ', min: 100001, max: 200000 },
+  { id: 'price-4', label: 'Từ 200.000đ đến 400.000đ', min: 200001, max: 400000 },
+  { id: 'price-5', label: 'Từ 400.000đ đến 800.000đ', min: 400001, max: 800000 },
+  { id: 'price-6', label: 'Từ 800.000đ đến 1 triệu', min: 800001, max: 1000000 },
+];
+
 const ProductListPage = () => {
   const [searchParams] = useSearchParams();
   const categoryParam = searchParams.get('category');
@@ -73,7 +82,7 @@ const ProductListPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState('Sắp xếp theo');
   const [showSort, setShowSort] = useState(false);
-  const [maxPrice, setMaxPrice] = useState(5000000);
+  const [selectedPriceRanges, setSelectedPriceRanges] = useState([]);
   const [selectedBrands, setSelectedBrands] = useState([]);
 
   // Update selected category when URL param changes
@@ -121,9 +130,30 @@ const ProductListPage = () => {
     );
   };
 
+  const handlePriceRangeClick = (rangeId) => {
+    setSelectedPriceRanges(prev => 
+      prev.includes(rangeId) 
+        ? prev.filter(id => id !== rangeId) 
+        : [...prev, rangeId]
+    );
+  };
+
   const filtered = allProducts.filter((p) => {
-    if (p.price > maxPrice) return false;
-    if (selectedBrands.length > 0 && !selectedBrands.includes(p.brand)) return false;
+    if (selectedPriceRanges.length > 0) {
+      const isMatch = selectedPriceRanges.some(rangeId => {
+        const range = priceRanges.find(r => r.id === rangeId);
+        return p.price >= range.min && p.price <= range.max;
+      });
+      if (!isMatch) return false;
+    }
+
+    if (selectedBrands.length > 0) {
+      const mainBrands = ['Royal Canin', 'Pedigree', 'Whiskas', 'Me-O'];
+      const isSelectedMainBrand = selectedBrands.includes(p.brand);
+      const isOtherSelected = selectedBrands.includes('Khác') && !mainBrands.includes(p.brand);
+      
+      if (!isSelectedMainBrand && !isOtherSelected) return false;
+    }
 
     if (categoryParam === 'cho') {
       // Exclude cat specific products
@@ -217,12 +247,23 @@ const ProductListPage = () => {
     return 0;
   });
 
+  const getBreadcrumbLabel = () => {
+    switch (categoryParam) {
+      case 'cho': return 'Sản phẩm cho Chó';
+      case 'meo': return 'Sản phẩm cho Mèo';
+      case 'phu-kien': return 'Phụ kiện';
+      case 'do-choi': return 'Đồ chơi';
+      case 'suc-khoe': return 'Chăm sóc';
+      default: return 'Danh sách sản phẩm';
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <nav className="flex items-center gap-2 text-sm text-text-gray mb-6">
-        <a href="/" className="hover:text-primary">Trang chủ</a>
+        <Link to="/" className="hover:text-primary">Trang chủ</Link>
         <span>/</span>
-        <span className="text-text-dark font-medium">Danh sách sản phẩm</span>
+        <Link to="/" className="text-text-dark font-medium hover:text-primary">{getBreadcrumbLabel()}</Link>
       </nav>
 
       <div className="flex gap-8">
@@ -266,18 +307,24 @@ const ProductListPage = () => {
             {/* Price Filter */}
             <div className="mb-8 border-t border-border pt-6">
               <h3 className="font-semibold text-lg text-text-dark mb-4">Khoảng giá</h3>
-              <input
-                type="range"
-                min="0"
-                max="5000000"
-                step="50000"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(Number(e.target.value))}
-                className="w-full accent-primary h-1.5 bg-border rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="flex justify-between text-xs text-text-gray mt-2">
-                <span>0đ</span>
-                <span className="font-medium text-text-dark">{maxPrice >= 5000000 ? '5.000.000đ+' : `${maxPrice.toLocaleString('vi-VN')}đ`}</span>
+              <div className="space-y-4">
+                {priceRanges.map((range) => (
+                  <label key={range.id} className="flex items-center gap-3 cursor-pointer group" onClick={() => handlePriceRangeClick(range.id)}>
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedPriceRanges.includes(range.id)
+                        ? 'bg-primary border-primary'
+                        : 'border-[#cbd5e1] group-hover:border-primary/50'
+                      }`}>
+                      {selectedPriceRanges.includes(range.id) && (
+                        <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      )}
+                    </div>
+                    <span className="text-[15px] text-[#475569]">
+                      {range.label}
+                    </span>
+                  </label>
+                ))}
               </div>
             </div>
 
@@ -285,7 +332,7 @@ const ProductListPage = () => {
             <div className="mb-8 border-t border-border pt-6">
               <h3 className="font-semibold text-lg text-text-dark mb-4">Thương hiệu</h3>
               <div className="space-y-3">
-                {['Royal Canin', 'Pedigree', 'Whiskas', 'Me-O'].map(brand => (
+                {['Royal Canin', 'Pedigree', 'Whiskas', 'Me-O', 'Khác'].map(brand => (
                   <label key={brand} className="flex items-center gap-3 cursor-pointer group" onClick={() => handleBrandClick(brand)}>
                     <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedBrands.includes(brand)
                         ? 'bg-[#2962ff] border-[#2962ff]'

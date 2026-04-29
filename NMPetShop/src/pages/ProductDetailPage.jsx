@@ -61,7 +61,7 @@ const ProductDetailPage = () => {
       <nav className="flex items-center gap-2 text-sm text-text-gray mb-6">
         <Link to="/" className="hover:text-primary">Trang chủ</Link>
         <span>/</span>
-        <Link to="/san-pham" className="hover:text-primary">Sản phẩm</Link>
+        <Link to="/" className="hover:text-primary">Danh sách sản phẩm</Link>
         <span>/</span>
         <span className="text-text-dark font-medium">{product.name}</span>
       </nav>

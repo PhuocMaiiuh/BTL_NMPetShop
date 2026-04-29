@@ -82,13 +82,13 @@ const HeroBanner = () => {
         <div className="absolute inset-0 pointer-events-none z-20">
           <div className="absolute right-8 sm:right-12 md:right-20 lg:right-32 bottom-12 sm:bottom-16 md:bottom-28 lg:bottom-32 flex flex-col sm:flex-row gap-3 pointer-events-auto translate-y-[12px]">
             <Link
-              to="/san-pham"
+              to="/"
               className="px-4 py-2 sm:px-6 sm:py-2.5 bg-[#e85a2b] hover:bg-[#d64e22] text-white font-semibold rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 text-xs sm:text-sm whitespace-nowrap text-center"
             >
               Khám Phá Ngay
             </Link>
             <Link
-              to="/san-pham"
+              to="/"
               className="px-4 py-2 sm:px-6 sm:py-2.5 bg-white hover:bg-gray-50 text-[#e85a2b] font-semibold rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 text-xs sm:text-sm whitespace-nowrap text-center"
             >
               Mua Sắm Ngay

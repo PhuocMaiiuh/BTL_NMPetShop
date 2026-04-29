@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiGrid, FiPackage, FiShoppingBag, FiUsers, FiSettings, FiLogOut, FiTag } from 'react-icons/fi';
+import { FiGrid, FiPackage, FiShoppingBag, FiUsers, FiSettings, FiLogOut, FiTag, FiMessageSquare } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 
 const AdminSidebar = () => {
@@ -18,6 +18,7 @@ const AdminSidebar = () => {
     { label: 'Đơn hàng', icon: <FiShoppingBag size={18} />, path: '/admin/don-hang' },
     { label: 'Khách hàng', icon: <FiUsers size={18} />, path: '/admin/khach-hang' },
     { label: 'Khuyến mãi', icon: <FiTag size={18} />, path: '/admin/khuyen-mai' },
+    { label: 'Tin nhắn', icon: <FiMessageSquare size={18} />, path: '/admin/tin-nhan' },
     { label: 'Cài đặt', icon: <FiSettings size={18} />, path: '/admin/cai-dat' },
   ];
 

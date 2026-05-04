@@ -4,18 +4,18 @@ import ProductCard from '../components/ProductCard';
 import { FiFilter, FiGrid, FiList, FiChevronDown } from 'react-icons/fi';
 
 const defaultProducts = [
-  { id: 1, name: 'Hạt khô Royal Canin cho chó', image: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=400&h=400&fit=crop', price: 110000, originalPrice: 150000, rating: 4, reviews: 12, category: 'Thức ăn cho chó', badge: 'Hot', brand: 'Royal Canin', isBestSelling: true, active: true },
-  { id: 2, name: 'Thức ăn ướt cho mèo cá ngừ', image: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=400&h=400&fit=crop', price: 320000, originalPrice: 380000, rating: 5, reviews: 18, category: 'Thức ăn cho mèo', badge: 'Sale', brand: 'Whiskas', isBestSelling: true, active: true },
-  { id: 3, name: 'Pate tươi cho chó con vị gà', image: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=400&fit=crop', price: 382500, originalPrice: 450000, rating: 4, reviews: 15, category: 'Thức ăn cho chó', badge: 'Sale', brand: 'Pedigree', isBestSelling: true, active: true },
-  { id: 4, name: 'Vòng cổ da cao cấp thú cưng', image: 'https://images.unsplash.com/photo-1535930749574-1399327ce78f?w=400&h=400&fit=crop', price: 180000, originalPrice: 220000, rating: 5, reviews: 10, category: 'Phụ kiện', badge: 'Hot', brand: 'Royal Canin', isBestSelling: true, active: true },
-  { id: 5, name: 'Đồ chơi xương gặm cao su', image: 'https://images.unsplash.com/photo-1535294435445-d7249524ef2e?w=400&h=400&fit=crop', price: 85000, rating: 4, reviews: 20, category: 'Đồ chơi', brand: 'Pedigree', isBestSelling: true, active: true },
-  { id: 6, name: 'Bát ăn inox chống trượt', image: 'https://images.unsplash.com/photo-1601758174114-e711c0cbaa69?w=400&h=400&fit=crop', price: 120000, rating: 5, reviews: 7, category: 'Phụ kiện', brand: 'Me-O', isBestSelling: true, active: true },
-  { id: 7, name: 'Sữa tắm thảo dược cho mèo', image: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&h=400&fit=crop', price: 195000, rating: 4, reviews: 11, category: 'Chăm sóc sức khỏe', brand: 'Whiskas', isBestSelling: true, active: true },
-  { id: 8, name: 'Cần câu mèo gắn lông vũ', image: 'https://images.unsplash.com/photo-1545249390-6bdfa286032f?w=400&h=400&fit=crop', price: 45000, rating: 5, reviews: 25, category: 'Đồ chơi', brand: 'Me-O', isBestSelling: true, active: true },
-  { id: 9, name: 'Ổ nằm bông êm ái cho thú cưng', image: 'https://images.unsplash.com/photo-1591946614421-1d977ff89c46?w=400&h=400&fit=crop', price: 450000, originalPrice: 550000, rating: 5, reviews: 14, category: 'Phụ kiện', badge: 'Hot', brand: 'Royal Canin', isBestSelling: true, active: true },
-  { id: 10, name: 'Xịt khử mùi vệ sinh chó mèo', image: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400&h=400&fit=crop', price: 135000, rating: 4, reviews: 9, category: 'Chăm sóc sức khỏe', brand: 'Me-O', isBestSelling: true, active: true },
-  { id: 11, name: 'Hạt khô cao cấp cho chó trưởng thành', image: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=400&h=400&fit=crop', price: 110000, rating: 4, reviews: 8, category: 'Thức ăn cho chó', brand: 'Royal Canin', active: true },
-  { id: 12, name: 'Thức ăn ướt cho mèo vị cá ngừ', image: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=400&h=400&fit=crop', price: 320000, rating: 5, reviews: 12, category: 'Thức ăn cho mèo', brand: 'Whiskas', active: true },
+  { id: 1, name: 'Hạt khô Royal Canin cho chó', image: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=400&h=400&fit=crop', price: 110000, originalPrice: 150000, rating: 4, reviews: 12, category: 'Thức ăn hạt (Sản phẩm cho Chó)', badge: 'Hot', brand: 'Royal Canin', isBestSelling: true, active: true },
+  { id: 2, name: 'Thức ăn ướt cho mèo cá ngừ', image: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=400&h=400&fit=crop', price: 320000, originalPrice: 380000, rating: 5, reviews: 18, category: 'Pate & Đồ hộp (Sản phẩm cho Mèo)', badge: 'Sale', brand: 'Whiskas', isBestSelling: true, active: true },
+  { id: 3, name: 'Pate tươi cho chó con vị gà', image: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=400&fit=crop', price: 382500, originalPrice: 450000, rating: 4, reviews: 15, category: 'Pate & Đồ hộp (Sản phẩm cho Chó)', badge: 'Sale', brand: 'Pedigree', isBestSelling: true, active: true },
+  { id: 4, name: 'Vòng cổ da cao cấp thú cưng', image: 'https://images.unsplash.com/photo-1535930749574-1399327ce78f?w=400&h=400&fit=crop', price: 180000, originalPrice: 220000, rating: 5, reviews: 10, category: 'Vòng cổ & Dây dắt (Phụ kiện)', badge: 'Hot', brand: 'Royal Canin', isBestSelling: true, active: true },
+  { id: 5, name: 'Đồ chơi xương gặm cao su', image: 'https://images.unsplash.com/photo-1535294435445-d7249524ef2e?w=400&h=400&fit=crop', price: 85000, rating: 4, reviews: 20, category: 'Đồ chơi nhai gặm (Đồ chơi)', brand: 'Pedigree', isBestSelling: true, active: true },
+  { id: 6, name: 'Bát ăn inox chống trượt', image: 'https://images.unsplash.com/photo-1601758174114-e711c0cbaa69?w=400&h=400&fit=crop', price: 120000, rating: 5, reviews: 7, category: 'Bát ăn & Bình nước (Phụ kiện)', brand: 'Me-O', isBestSelling: true, active: true },
+  { id: 7, name: 'Sữa tắm thảo dược cho mèo', image: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&h=400&fit=crop', price: 195000, rating: 4, reviews: 11, category: 'Sữa tắm & Vệ sinh (Sản phẩm cho Mèo)', brand: 'Whiskas', isBestSelling: true, active: true },
+  { id: 8, name: 'Cần câu mèo gắn lông vũ', image: 'https://images.unsplash.com/photo-1545249390-6bdfa286032f?w=400&h=400&fit=crop', price: 45000, rating: 5, reviews: 25, category: 'Cần câu & Bóng (Đồ chơi)', brand: 'Me-O', isBestSelling: true, active: true },
+  { id: 9, name: 'Ổ nằm bông êm ái cho thú cưng', image: 'https://images.unsplash.com/photo-1591946614421-1d977ff89c46?w=400&h=400&fit=crop', price: 450000, originalPrice: 550000, rating: 5, reviews: 14, category: 'Giường nệm & Chuồng (Phụ kiện)', badge: 'Hot', brand: 'Royal Canin', isBestSelling: true, active: true },
+  { id: 10, name: 'Xịt khử mùi vệ sinh chó mèo', image: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400&h=400&fit=crop', price: 135000, rating: 4, reviews: 9, category: 'Sữa tắm & Vệ sinh (Sản phẩm cho Chó)', brand: 'Me-O', isBestSelling: true, active: true },
+  { id: 11, name: 'Hạt khô cao cấp cho chó trưởng thành', image: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=400&h=400&fit=crop', price: 110000, rating: 4, reviews: 8, category: 'Thức ăn hạt (Sản phẩm cho Chó)', brand: 'Royal Canin', active: true },
+  { id: 12, name: 'Thức ăn ướt cho mèo vị cá ngừ', image: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=400&h=400&fit=crop', price: 320000, rating: 5, reviews: 12, category: 'Pate & Đồ hộp (Sản phẩm cho Mèo)', brand: 'Whiskas', active: true },
 ];
 
 const mainCategories = [
@@ -98,6 +98,7 @@ const ProductListPage = () => {
   const [showSort, setShowSort] = useState(false);
   const [selectedPriceRanges, setSelectedPriceRanges] = useState([]);
   const [selectedBrands, setSelectedBrands] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState(['Tất cả']);
 
   // Update selected category when URL param changes
   useEffect(() => {
@@ -175,85 +176,40 @@ const ProductListPage = () => {
     }
 
     if (categoryParam === 'cho') {
-      // Exclude cat specific products
-      const isCatProduct = p.category.includes('mèo') || p.name.toLowerCase().includes('mèo');
-      if (isCatProduct) return false;
+      const isDogRelated = p.category.toLowerCase().includes('chó') || p.name.toLowerCase().includes('chó');
+      if (!isDogRelated) return false;
 
-      if (selectedCategories.includes('Tất cả cho Chó')) {
-        return p.category.includes('chó') || p.name.toLowerCase().includes('chó') || p.category === 'Phụ kiện' || p.category === 'Đồ chơi' || p.category === 'Chăm sóc';
-      }
-
-      const matchesFood = selectedCategories.includes('Thức ăn hạt') && (p.name.toLowerCase().includes('hạt') || p.category === 'Thức ăn cho chó');
-      const matchesPate = selectedCategories.includes('Pate & Đồ hộp') && p.name.toLowerCase().includes('pate');
-      const matchesHygiene = selectedCategories.includes('Sữa tắm & Vệ sinh') && (p.category === 'Chăm sóc' || p.name.toLowerCase().includes('sữa tắm'));
-
-      return matchesFood || matchesPate || matchesHygiene;
+      if (selectedCategories.includes('Tất cả cho Chó')) return true;
+      return selectedCategories.some(catLabel => p.category.includes(catLabel));
     }
 
     if (categoryParam === 'meo') {
-      // Exclude dog specific products
-      const isDogProduct = p.category.includes('chó') || p.name.toLowerCase().includes('chó');
-      if (isDogProduct) return false;
+      const isCatRelated = p.category.toLowerCase().includes('mèo') || p.name.toLowerCase().includes('mèo');
+      if (!isCatRelated) return false;
 
-      if (selectedCategories.includes('Tất cả cho Mèo')) {
-        return p.category.includes('mèo') || p.name.toLowerCase().includes('mèo') || p.category === 'Phụ kiện' || p.category === 'Đồ chơi' || p.category === 'Chăm sóc';
-      }
-
-      const matchesFood = selectedCategories.includes('Thức ăn hạt') && (p.name.toLowerCase().includes('hạt') || p.category === 'Thức ăn cho mèo');
-      const matchesPate = selectedCategories.includes('Pate & Đồ hộp') && p.name.toLowerCase().includes('pate');
-      const matchesHygiene = selectedCategories.includes('Sữa tắm & Vệ sinh') && (p.category === 'Chăm sóc' || p.name.toLowerCase().includes('sữa tắm'));
-
-      return matchesFood || matchesPate || matchesHygiene;
+      if (selectedCategories.includes('Tất cả cho Mèo')) return true;
+      return selectedCategories.some(catLabel => p.category.includes(catLabel));
     }
 
     if (categoryParam === 'phu-kien') {
-      if (p.category !== 'Phụ kiện') return false;
+      if (!p.category.includes('Phụ kiện')) return false;
 
-      if (selectedCategories.includes('Tất cả')) {
-        return true;
-      }
-
-      const isGeneral = !p.name.toLowerCase().includes('chó') && !p.name.toLowerCase().includes('mèo');
-      const matchesDog = selectedCategories.includes('Phụ kiện cho chó') && (p.name.toLowerCase().includes('chó') || isGeneral);
-      const matchesCat = selectedCategories.includes('Phụ kiện cho mèo') && (p.name.toLowerCase().includes('mèo') || isGeneral);
-      const matchesCollar = selectedCategories.includes('Vòng cổ & Dây dắt') && (p.name.toLowerCase().includes('vòng cổ') || p.name.toLowerCase().includes('dây dắt'));
-      const matchesBowl = selectedCategories.includes('Bát ăn & Bình nước') && (p.name.toLowerCase().includes('bát ăn') || p.name.toLowerCase().includes('bình nước'));
-      const matchesBed = selectedCategories.includes('Giường nệm & Chuồng') && (p.name.toLowerCase().includes('giường') || p.name.toLowerCase().includes('nệm') || p.name.toLowerCase().includes('chuồng'));
-
-      return matchesDog || matchesCat || matchesCollar || matchesBowl || matchesBed;
+      if (selectedCategories.includes('Tất cả')) return true;
+      return selectedCategories.some(catLabel => p.category.includes(catLabel));
     }
 
     if (categoryParam === 'do-choi') {
-      if (p.category !== 'Đồ chơi') return false;
+      if (!p.category.includes('Đồ chơi')) return false;
 
-      if (selectedCategories.includes('Tất cả')) {
-        return true;
-      }
-
-      const isGeneral = !p.name.toLowerCase().includes('chó') && !p.name.toLowerCase().includes('mèo');
-      const matchesDog = selectedCategories.includes('Đồ chơi cho chó') && (p.name.toLowerCase().includes('chó') || isGeneral);
-      const matchesCat = selectedCategories.includes('Đồ chơi cho mèo') && (p.name.toLowerCase().includes('mèo') || isGeneral);
-      const matchesChew = selectedCategories.includes('Đồ chơi nhai gặm') && (p.name.toLowerCase().includes('nhai') || p.name.toLowerCase().includes('gặm') || p.name.toLowerCase().includes('xương'));
-      const matchesBall = selectedCategories.includes('Cần câu & Bóng') && (p.name.toLowerCase().includes('cần câu') || p.name.toLowerCase().includes('bóng'));
-      const matchesScratch = selectedCategories.includes('Bàn cào móng') && (p.name.toLowerCase().includes('cào') || p.name.toLowerCase().includes('trụ'));
-
-      return matchesDog || matchesCat || matchesChew || matchesBall || matchesScratch;
+      if (selectedCategories.includes('Tất cả')) return true;
+      return selectedCategories.some(catLabel => p.category.includes(catLabel));
     }
 
     if (categoryParam === 'suc-khoe') {
-      if (p.category !== 'Chăm sóc') return false;
+      if (!p.category.includes('Chăm sóc sức khỏe')) return false;
 
-      if (selectedCategories.includes('Tất cả')) {
-        return true;
-      }
-
-      const isGeneral = !p.name.toLowerCase().includes('chó') && !p.name.toLowerCase().includes('mèo');
-      const matchesDog = selectedCategories.includes('Chăm sóc cho chó') && (p.name.toLowerCase().includes('chó') || isGeneral);
-      const matchesCat = selectedCategories.includes('Chăm sóc cho mèo') && (p.name.toLowerCase().includes('mèo') || isGeneral);
-      const matchesMedicine = selectedCategories.includes('Thuốc & Vitamin') && (p.name.toLowerCase().includes('thuốc') || p.name.toLowerCase().includes('vitamin') || p.name.toLowerCase().includes('dinh dưỡng'));
-      const matchesTool = selectedCategories.includes('Dụng cụ cắt tỉa') && (p.name.toLowerCase().includes('kéo') || p.name.toLowerCase().includes('tông đơ') || p.name.toLowerCase().includes('lược') || p.name.toLowerCase().includes('kềm') || p.name.toLowerCase().includes('kìm'));
-
-      return matchesDog || matchesCat || matchesMedicine || matchesTool;
+      if (selectedCategories.includes('Tất cả')) return true;
+      return selectedCategories.some(catLabel => p.category.includes(catLabel));
     }
 
     return (selectedCategories.includes('Tất cả') || selectedCategories.includes(p.category));

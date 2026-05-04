@@ -1,17 +1,21 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { FiFilter, FiGrid, FiList, FiChevronDown } from 'react-icons/fi';
 
-const allProducts = [
-  { id: 1, name: 'Hạt khô cao cấp cho chó trưởng thành', image: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=400&h=400&fit=crop', price: 110000, rating: 4, reviews: 8, category: 'Thức ăn cho chó', brand: 'Royal Canin' },
-  { id: 2, name: 'Thức ăn ướt cho mèo vị cá ngừ', image: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=400&h=400&fit=crop', price: 320000, rating: 5, reviews: 12, category: 'Thức ăn cho mèo', brand: 'Whiskas' },
-  { id: 3, name: 'Pate cho chó con vị gà', image: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=400&fit=crop', price: 382500, originalPrice: 450000, rating: 4, reviews: 6, category: 'Thức ăn cho chó', badge: 'Sale', brand: 'Pedigree' },
-  { id: 4, name: 'Thức ăn hạt tự nhiên', image: 'https://images.unsplash.com/photo-1535930749574-1399327ce78f?w=400&h=400&fit=crop', price: 180000, rating: 5, reviews: 15, category: 'Phụ kiện', brand: 'Me-O' },
-  { id: 5, name: 'Vòng cổ da cao cấp cho chó', image: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&h=400&fit=crop', price: 250000, originalPrice: 300000, rating: 4, reviews: 9, category: 'Phụ kiện', badge: 'Sale', brand: 'Royal Canin' },
-  { id: 6, name: 'Đồ chơi bóng cao su', image: 'https://images.unsplash.com/photo-1535294435445-d7249524ef2e?w=400&h=400&fit=crop', price: 85000, rating: 4, reviews: 20, category: 'Đồ chơi', brand: 'Pedigree' },
-  { id: 7, name: 'Bát ăn inox chống lật', image: 'https://images.unsplash.com/photo-1601758174114-e711c0cbaa69?w=400&h=400&fit=crop', price: 120000, rating: 5, reviews: 7, category: 'Phụ kiện', brand: 'Me-O' },
-  { id: 8, name: 'Sữa tắm thảo dược cho mèo', image: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&h=400&fit=crop', price: 195000, originalPrice: 230000, rating: 4, reviews: 11, category: 'Chăm sóc', badge: 'Sale', brand: 'Whiskas' },
+const defaultProducts = [
+  { id: 1, name: 'Hạt khô Royal Canin cho chó', image: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=400&h=400&fit=crop', price: 110000, originalPrice: 150000, rating: 4, reviews: 12, category: 'Thức ăn cho chó', badge: 'Hot', brand: 'Royal Canin', isBestSelling: true, active: true },
+  { id: 2, name: 'Thức ăn ướt cho mèo cá ngừ', image: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=400&h=400&fit=crop', price: 320000, originalPrice: 380000, rating: 5, reviews: 18, category: 'Thức ăn cho mèo', badge: 'Sale', brand: 'Whiskas', isBestSelling: true, active: true },
+  { id: 3, name: 'Pate tươi cho chó con vị gà', image: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=400&fit=crop', price: 382500, originalPrice: 450000, rating: 4, reviews: 15, category: 'Thức ăn cho chó', badge: 'Sale', brand: 'Pedigree', isBestSelling: true, active: true },
+  { id: 4, name: 'Vòng cổ da cao cấp thú cưng', image: 'https://images.unsplash.com/photo-1535930749574-1399327ce78f?w=400&h=400&fit=crop', price: 180000, originalPrice: 220000, rating: 5, reviews: 10, category: 'Phụ kiện', badge: 'Hot', brand: 'Royal Canin', isBestSelling: true, active: true },
+  { id: 5, name: 'Đồ chơi xương gặm cao su', image: 'https://images.unsplash.com/photo-1535294435445-d7249524ef2e?w=400&h=400&fit=crop', price: 85000, rating: 4, reviews: 20, category: 'Đồ chơi', brand: 'Pedigree', isBestSelling: true, active: true },
+  { id: 6, name: 'Bát ăn inox chống trượt', image: 'https://images.unsplash.com/photo-1601758174114-e711c0cbaa69?w=400&h=400&fit=crop', price: 120000, rating: 5, reviews: 7, category: 'Phụ kiện', brand: 'Me-O', isBestSelling: true, active: true },
+  { id: 7, name: 'Sữa tắm thảo dược cho mèo', image: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&h=400&fit=crop', price: 195000, rating: 4, reviews: 11, category: 'Chăm sóc sức khỏe', brand: 'Whiskas', isBestSelling: true, active: true },
+  { id: 8, name: 'Cần câu mèo gắn lông vũ', image: 'https://images.unsplash.com/photo-1545249390-6bdfa286032f?w=400&h=400&fit=crop', price: 45000, rating: 5, reviews: 25, category: 'Đồ chơi', brand: 'Me-O', isBestSelling: true, active: true },
+  { id: 9, name: 'Ổ nằm bông êm ái cho thú cưng', image: 'https://images.unsplash.com/photo-1591946614421-1d977ff89c46?w=400&h=400&fit=crop', price: 450000, originalPrice: 550000, rating: 5, reviews: 14, category: 'Phụ kiện', badge: 'Hot', brand: 'Royal Canin', isBestSelling: true, active: true },
+  { id: 10, name: 'Xịt khử mùi vệ sinh chó mèo', image: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400&h=400&fit=crop', price: 135000, rating: 4, reviews: 9, category: 'Chăm sóc sức khỏe', brand: 'Me-O', isBestSelling: true, active: true },
+  { id: 11, name: 'Hạt khô cao cấp cho chó trưởng thành', image: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=400&h=400&fit=crop', price: 110000, rating: 4, reviews: 8, category: 'Thức ăn cho chó', brand: 'Royal Canin', active: true },
+  { id: 12, name: 'Thức ăn ướt cho mèo vị cá ngừ', image: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=400&h=400&fit=crop', price: 320000, rating: 5, reviews: 12, category: 'Thức ăn cho mèo', brand: 'Whiskas', active: true },
 ];
 
 const mainCategories = [
@@ -20,7 +24,7 @@ const mainCategories = [
   { id: 'cat-food', label: 'Thức ăn cho mèo' },
   { id: 'acc', label: 'Phụ kiện' },
   { id: 'toy', label: 'Đồ chơi' },
-  { id: 'health', label: 'Chăm sóc' }
+  { id: 'health', label: 'Chăm sóc sức khỏe' }
 ];
 
 const dogCategories = [
@@ -59,7 +63,6 @@ const healthCategories = [
   { id: 'all-health', label: 'Tất cả' },
   { id: 'health-dog', label: 'Chăm sóc cho chó' },
   { id: 'health-cat', label: 'Chăm sóc cho mèo' },
-  { id: 'health-shampoo', label: 'Sữa tắm & Vệ sinh' },
   { id: 'health-medicine', label: 'Thuốc & Vitamin' },
   { id: 'health-tool', label: 'Dụng cụ cắt tỉa' }
 ];
@@ -76,9 +79,20 @@ const priceRanges = [
 const ProductListPage = () => {
   const [searchParams] = useSearchParams();
   const categoryParam = searchParams.get('category');
+  const filterParam = searchParams.get('filter');
 
-  const [selectedCategories, setSelectedCategories] = useState(['Tất cả']);
+  const [products, setProducts] = useState(() => {
+    const saved = localStorage.getItem('nm_petshop_products');
+    return saved ? JSON.parse(saved) : defaultProducts;
+  });
   const [viewMode, setViewMode] = useState('grid');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!categoryParam && !filterParam) {
+      navigate('/');
+    }
+  }, [categoryParam, filterParam, navigate]);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState('Sắp xếp theo');
   const [showSort, setShowSort] = useState(false);
@@ -131,14 +145,19 @@ const ProductListPage = () => {
   };
 
   const handlePriceRangeClick = (rangeId) => {
-    setSelectedPriceRanges(prev => 
-      prev.includes(rangeId) 
-        ? prev.filter(id => id !== rangeId) 
+    setSelectedPriceRanges(prev =>
+      prev.includes(rangeId)
+        ? prev.filter(id => id !== rangeId)
         : [...prev, rangeId]
     );
   };
 
-  const filtered = allProducts.filter((p) => {
+  const filtered = products.filter((p) => {
+    // If filter=top-selling is active, only show best selling products
+    if (filterParam === 'top-selling') {
+      return p.isBestSelling;
+    }
+
     if (selectedPriceRanges.length > 0) {
       const isMatch = selectedPriceRanges.some(rangeId => {
         const range = priceRanges.find(r => r.id === rangeId);
@@ -151,7 +170,7 @@ const ProductListPage = () => {
       const mainBrands = ['Royal Canin', 'Pedigree', 'Whiskas', 'Me-O'];
       const isSelectedMainBrand = selectedBrands.includes(p.brand);
       const isOtherSelected = selectedBrands.includes('Khác') && !mainBrands.includes(p.brand);
-      
+
       if (!isSelectedMainBrand && !isOtherSelected) return false;
     }
 
@@ -231,15 +250,14 @@ const ProductListPage = () => {
       const isGeneral = !p.name.toLowerCase().includes('chó') && !p.name.toLowerCase().includes('mèo');
       const matchesDog = selectedCategories.includes('Chăm sóc cho chó') && (p.name.toLowerCase().includes('chó') || isGeneral);
       const matchesCat = selectedCategories.includes('Chăm sóc cho mèo') && (p.name.toLowerCase().includes('mèo') || isGeneral);
-      const matchesShampoo = selectedCategories.includes('Sữa tắm & Vệ sinh') && (p.name.toLowerCase().includes('sữa tắm') || p.name.toLowerCase().includes('khử mùi') || p.name.toLowerCase().includes('vệ sinh'));
       const matchesMedicine = selectedCategories.includes('Thuốc & Vitamin') && (p.name.toLowerCase().includes('thuốc') || p.name.toLowerCase().includes('vitamin') || p.name.toLowerCase().includes('dinh dưỡng'));
       const matchesTool = selectedCategories.includes('Dụng cụ cắt tỉa') && (p.name.toLowerCase().includes('kéo') || p.name.toLowerCase().includes('tông đơ') || p.name.toLowerCase().includes('lược') || p.name.toLowerCase().includes('kềm') || p.name.toLowerCase().includes('kìm'));
 
-      return matchesDog || matchesCat || matchesShampoo || matchesMedicine || matchesTool;
+      return matchesDog || matchesCat || matchesMedicine || matchesTool;
     }
 
-    return selectedCategories.includes('Tất cả') || selectedCategories.includes(p.category);
-  });
+    return (selectedCategories.includes('Tất cả') || selectedCategories.includes(p.category));
+  }).filter(p => p.active !== false); // Only show active products
 
   const sortedAndFiltered = [...filtered].sort((a, b) => {
     if (sortBy === 'Giá tăng dần') return a.price - b.price;
@@ -248,13 +266,14 @@ const ProductListPage = () => {
   });
 
   const getBreadcrumbLabel = () => {
+    if (filterParam === 'top-selling') return 'Sản phẩm bán chạy nhất';
     switch (categoryParam) {
-      case 'cho': return 'Sản phẩm cho Chó';
-      case 'meo': return 'Sản phẩm cho Mèo';
+      case 'cho': return 'Sản phẩm cho chó';
+      case 'meo': return 'Sản phẩm cho mèo';
       case 'phu-kien': return 'Phụ kiện';
       case 'do-choi': return 'Đồ chơi';
-      case 'suc-khoe': return 'Chăm sóc';
-      default: return 'Danh sách sản phẩm';
+      case 'suc-khoe': return 'Chăm sóc sức khỏe';
+      default: return '';
     }
   };
 
@@ -263,7 +282,7 @@ const ProductListPage = () => {
       <nav className="flex items-center gap-2 text-sm text-text-gray mb-6">
         <Link to="/" className="hover:text-primary">Trang chủ</Link>
         <span>/</span>
-        <Link to="/" className="text-text-dark font-medium hover:text-primary">{getBreadcrumbLabel()}</Link>
+        <span className="text-text-dark font-medium">{getBreadcrumbLabel()}</span>
       </nav>
 
       <div className="flex gap-8">
@@ -287,8 +306,8 @@ const ProductListPage = () => {
                 ).map((cat) => (
                   <label key={cat.id} className="flex items-center gap-3 cursor-pointer group" onClick={() => handleCheckboxClick(cat.label, categoryParam === 'cho' ? 'Tất cả cho Chó' : categoryParam === 'meo' ? 'Tất cả cho Mèo' : 'Tất cả')}>
                     <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedCategories.includes(cat.label)
-                        ? 'bg-[#2962ff] border-[#2962ff]'
-                        : 'border-[#cbd5e1] group-hover:border-[#2962ff]/50'
+                      ? 'bg-[#2962ff] border-[#2962ff]'
+                      : 'border-[#cbd5e1] group-hover:border-[#2962ff]/50'
                       }`}>
                       {selectedCategories.includes(cat.label) && (
                         <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -311,8 +330,8 @@ const ProductListPage = () => {
                 {priceRanges.map((range) => (
                   <label key={range.id} className="flex items-center gap-3 cursor-pointer group" onClick={() => handlePriceRangeClick(range.id)}>
                     <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedPriceRanges.includes(range.id)
-                        ? 'bg-primary border-primary'
-                        : 'border-[#cbd5e1] group-hover:border-primary/50'
+                      ? 'bg-primary border-primary'
+                      : 'border-[#cbd5e1] group-hover:border-primary/50'
                       }`}>
                       {selectedPriceRanges.includes(range.id) && (
                         <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -335,8 +354,8 @@ const ProductListPage = () => {
                 {['Royal Canin', 'Pedigree', 'Whiskas', 'Me-O', 'Khác'].map(brand => (
                   <label key={brand} className="flex items-center gap-3 cursor-pointer group" onClick={() => handleBrandClick(brand)}>
                     <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedBrands.includes(brand)
-                        ? 'bg-[#2962ff] border-[#2962ff]'
-                        : 'border-[#cbd5e1] group-hover:border-[#2962ff]/50'
+                      ? 'bg-[#2962ff] border-[#2962ff]'
+                      : 'border-[#cbd5e1] group-hover:border-[#2962ff]/50'
                       }`}>
                       {selectedBrands.includes(brand) && (
                         <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -366,32 +385,42 @@ const ProductListPage = () => {
                 <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-white shadow-sm text-primary' : 'text-text-gray'}`}><FiGrid size={16} /></button>
                 <button onClick={() => setViewMode('list')} className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-white shadow-sm text-primary' : 'text-text-gray'}`}><FiList size={16} /></button>
               </div>
-              <div className="relative">
+              <div className="relative min-w-[160px]">
                 <button
                   onClick={() => setShowSort(!showSort)}
-                  className="text-sm border border-border rounded-lg px-3 py-2 bg-white outline-none hover:border-primary flex items-center justify-between gap-2"
+                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-white outline-none hover:border-primary flex items-center justify-between gap-2 transition-all"
                 >
                   <span className="whitespace-nowrap">{sortBy}</span>
                   <FiChevronDown className={`transition-transform flex-shrink-0 ${showSort ? 'rotate-180' : ''}`} />
                 </button>
 
                 {showSort && (
-                  <div className="absolute right-0 top-full mt-2 w-36 bg-white rounded-xl shadow-lg border border-border overflow-hidden z-50">
-                    <div className="bg-primary text-white text-center py-2 text-sm font-medium">
-                      Sắp xếp theo
-                    </div>
-                    <button
-                      onClick={() => { setSortBy('Giá tăng dần'); setShowSort(false); }}
-                      className="w-full text-center px-3 py-2 text-sm hover:bg-bg-gray text-text-dark transition-colors"
-                    >
-                      Giá tăng dần
-                    </button>
-                    <button
-                      onClick={() => { setSortBy('Giá giảm dần'); setShowSort(false); }}
-                      className="w-full text-center px-3 py-2 text-sm hover:bg-bg-gray text-text-dark border-t border-border transition-colors"
-                    >
-                      Giá giảm dần
-                    </button>
+                  <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-border overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {[
+                      { id: 'default', label: 'Sắp xếp theo' },
+                      { id: 'price-asc', label: 'Giá tăng dần' },
+                      { id: 'price-desc', label: 'Giá giảm dần' }
+                    ].map((option) => (
+                      <button
+                        key={option.id}
+                        onClick={() => {
+                          setSortBy(option.label);
+                          setShowSort(false);
+                        }}
+                        className={`w-full text-left px-4 py-3 text-sm transition-all flex items-center justify-between
+                          ${sortBy === option.label
+                            ? 'bg-primary text-white font-medium'
+                            : 'text-text-dark hover:bg-bg-gray'
+                          } ${option.id !== 'default' ? 'border-t border-gray-50' : ''}`}
+                      >
+                        <span className="whitespace-nowrap">{option.label}</span>
+                        {sortBy === option.label && (
+                          <svg className="w-4 h-4 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>

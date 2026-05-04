@@ -77,19 +77,35 @@ const Header = () => {
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => {
-              const isActive = location.pathname === link.path.split('?')[0] &&
+              const isDropdown = !!link.submenu;
+              let currentLabel = link.label;
+              let isDropdownActive = false;
+
+              if (isDropdown) {
+                const activeSub = link.submenu.find(sub =>
+                  location.pathname === sub.path.split('?')[0] &&
+                  location.search === '?' + sub.path.split('?')[1]
+                );
+                if (activeSub) {
+                  currentLabel = activeSub.label;
+                  isDropdownActive = true;
+                }
+              }
+
+              const isActive = !isDropdown &&
+                location.pathname === link.path.split('?')[0] &&
                 (location.search === '' || location.search === '?' + link.path.split('?')[1]);
 
               return (
-                <div key={link.label} className="relative group py-5 -my-5">
+                <div key={link.label} className={`relative group py-5 -my-5 ${isDropdown ? 'min-w-[90px] flex justify-center' : ''}`}>
                   {link.submenu ? (
                     <span
-                      className={`relative cursor-pointer text-sm font-medium transition-colors duration-200 py-1 flex items-center gap-1 ${isActive ? 'text-primary' : 'text-text-gray hover:text-primary'
+                      className={`relative cursor-pointer text-sm font-medium transition-colors duration-200 py-1 flex items-center gap-1 ${isDropdownActive ? 'text-primary' : 'text-text-gray hover:text-primary'
                         }`}
                     >
-                      {link.label}
-                      <FiChevronDown size={14} className="transition-transform group-hover:rotate-180" />
-                      <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-primary transform origin-left transition-transform duration-300 ${isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+                      {currentLabel}
+                      <FiChevronDown size={14} className="transition-transform group-hover:rotate-180 flex-shrink-0" />
+                      <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-primary transform origin-left transition-transform duration-300 ${isDropdownActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
                         }`}></span>
                     </span>
                   ) : (
@@ -106,12 +122,15 @@ const Header = () => {
 
                   {/* Dropdown Menu */}
                   {link.submenu && (
-                    <div className="absolute top-full left-0 mt-0 w-28 bg-white rounded-xl shadow-lg border border-border py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 translate-y-2 group-hover:translate-y-0">
+                    <div className="absolute top-full left-0 mt-0 min-w-[120px] bg-white rounded-xl shadow-lg border border-border py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 translate-y-2 group-hover:translate-y-0">
                       {link.submenu.map((subItem) => (
                         <Link
                           key={subItem.label}
                           to={subItem.path}
-                          className="block px-4 py-2 text-sm text-text-gray hover:bg-bg-gray hover:text-primary transition-colors"
+                          className={`block px-4 py-2 text-sm transition-colors ${location.search === '?' + subItem.path.split('?')[1]
+                            ? 'text-primary bg-bg-gray font-medium'
+                            : 'text-text-gray hover:bg-bg-gray hover:text-primary'
+                            }`}
                         >
                           {subItem.label}
                         </Link>

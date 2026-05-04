@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { FiArrowLeft, FiPackage, FiTruck, FiCheck } from 'react-icons/fi';
+import { FaStar } from 'react-icons/fa';
+import { useState } from 'react';
 
 const formatPrice = (p) => new Intl.NumberFormat('vi-VN').format(p) + 'đ';
 
@@ -7,8 +9,8 @@ const OrderDetailPage = () => {
   const order = {
     id: '#NM-9876',
     date: '24/10/2023',
-    status: 'Đang giao',
-    statusColor: 'text-warning',
+    status: 'Hoàn thành',
+    statusColor: 'text-accent-green',
     paymentMethod: 'Thanh toán khi nhận hàng (COD)',
     shippingAddress: '123 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh',
     customer: 'Nguyễn Văn A',
@@ -19,15 +21,22 @@ const OrderDetailPage = () => {
     ],
     subtotal: 1950000,
     shipping: 30000,
-    total: 1980000,
+    discount: 50000,
+    total: 1930000,
   };
 
   const trackingSteps = [
     { label: 'Đặt hàng', date: '24/10/2023', done: true, icon: <FiPackage /> },
     { label: 'Đang xử lý', date: '24/10/2023', done: true, icon: <FiPackage /> },
     { label: 'Đang giao', date: '25/10/2023', done: true, icon: <FiTruck /> },
-    { label: 'Hoàn thành', date: '', done: false, icon: <FiCheck /> },
+    { label: 'Hoàn thành', date: '26/10/2023', done: true, icon: <FiCheck /> },
   ];
+
+  const [ratings, setRatings] = useState({});
+
+  const handleRate = (productId, star) => {
+    setRatings({ ...ratings, [productId]: star });
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -40,7 +49,7 @@ const OrderDetailPage = () => {
           <h1 className="text-2xl font-bold text-text-dark">Chi tiết đơn hàng {order.id}</h1>
           <p className="text-sm text-text-gray mt-1">Ngày đặt: {order.date}</p>
         </div>
-        <span className={`px-4 py-1.5 rounded-full text-sm font-medium bg-warning/10 ${order.statusColor}`}>{order.status}</span>
+        <span className={`px-4 py-1.5 rounded-full text-sm font-medium bg-bg-gray ${order.statusColor}`}>{order.status}</span>
       </div>
 
       {/* Tracking */}
@@ -68,19 +77,46 @@ const OrderDetailPage = () => {
           <h3 className="font-semibold text-text-dark mb-4">Sản phẩm</h3>
           <div className="space-y-4">
             {order.items.map((item, i) => (
-              <div key={i} className="flex items-center gap-4 p-3 rounded-lg hover:bg-bg-gray/50">
-                <img src={item.image} alt={item.name} className="w-14 h-14 rounded-lg object-cover" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{item.name}</p>
-                  <p className="text-xs text-text-gray">x{item.qty}</p>
+              <div key={i} className="flex flex-col border-b border-border last:border-0 pb-4 last:pb-0">
+                <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-bg-gray/50">
+                  <img src={item.image} alt={item.name} className="w-14 h-14 rounded-lg object-cover" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{item.name}</p>
+                    <p className="text-xs text-text-gray">x{item.qty}</p>
+                  </div>
+                  <span className="text-sm font-semibold text-primary">{formatPrice(item.price * item.qty)}</span>
                 </div>
-                <span className="text-sm font-semibold text-primary">{formatPrice(item.price * item.qty)}</span>
+                
+                {order.status === 'Hoàn thành' && (
+                  <div className="flex items-center justify-between px-3 mt-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-text-gray font-medium">Đánh giá sản phẩm:</p>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            onClick={() => handleRate(i, star)}
+                            className={`transition-all ${ratings[i] >= star ? 'text-secondary scale-110' : 'text-gray-200 hover:text-secondary/50'}`}
+                          >
+                            <FaStar size={16} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {ratings[i] > 0 && (
+                      <button className="text-[10px] bg-primary text-white px-3 py-1 rounded-full font-semibold hover:bg-primary-light transition-colors">
+                        Gửi đánh giá
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
           <div className="border-t border-border mt-4 pt-4 space-y-2">
             <div className="flex justify-between text-sm"><span className="text-text-gray">Tạm tính</span><span>{formatPrice(order.subtotal)}</span></div>
             <div className="flex justify-between text-sm"><span className="text-text-gray">Vận chuyển</span><span>{formatPrice(order.shipping)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-text-gray">Giảm giá</span><span className="text-accent">-{formatPrice(order.discount)}</span></div>
             <div className="flex justify-between font-semibold border-t border-border pt-2"><span>Tổng</span><span className="text-lg text-primary">{formatPrice(order.total)}</span></div>
           </div>
         </div>

@@ -68,8 +68,8 @@ const CartPage = () => {
           </div>
 
           {/* Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl border border-border p-6 sticky top-24">
+          <div className="lg:col-span-1 h-fit">
+            <div className="bg-white rounded-xl border border-border p-6 sticky top-24 shadow-sm">
               <h3 className="font-semibold text-text-dark mb-4">Tóm tắt đơn hàng</h3>
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-sm"><span className="text-text-gray">Tạm tính</span><span className="font-medium">{formatPrice(cartSubtotal)}</span></div>

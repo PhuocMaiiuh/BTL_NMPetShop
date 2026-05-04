@@ -16,9 +16,10 @@ import AuthPage from './pages/AuthPage';
 import OrderDetailPage from './pages/OrderDetailPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
-import AdminProductForm from './pages/admin/AdminProductForm';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
 import AdminMessages from './pages/admin/AdminMessages';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminCustomers from './pages/admin/AdminCustomers';
 
 function App() {
   return (
@@ -68,10 +69,10 @@ function App() {
           }>
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/san-pham" element={<AdminProducts />} />
-            <Route path="/admin/san-pham/them" element={<AdminProductForm />} />
-            <Route path="/admin/san-pham/sua/:id" element={<AdminProductForm />} />
             <Route path="/admin/khuyen-mai" element={<AdminDiscounts />} />
             <Route path="/admin/tin-nhan" element={<AdminMessages />} />
+            <Route path="/admin/don-hang" element={<AdminOrders />} />
+            <Route path="/admin/khach-hang" element={<AdminCustomers />} />
           </Route>
           </Routes>
         </CartProvider>

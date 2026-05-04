@@ -25,7 +25,7 @@ const CheckoutPage = () => {
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const subtotal = orderItems.reduce((s, i) => s + i.price * i.qty, 0);
   const shipping = 30000;
-  const discount = 0;
+  const discount = 50000;
   const total = Math.max(0, subtotal + shipping - discount);
 
   return (
@@ -147,7 +147,7 @@ const CheckoutPage = () => {
             <div className="border-t border-border pt-3 space-y-2">
               <div className="flex justify-between text-sm"><span className="text-text-gray">Tạm tính</span><span>{formatPrice(subtotal)}</span></div>
               <div className="flex justify-between text-sm"><span className="text-text-gray">Vận chuyển</span><span>{formatPrice(shipping)}</span></div>
-              <div className="flex justify-between text-sm text-text-gray"><span className="text-text-gray">Giảm giá</span><span>{discount > 0 ? `-${formatPrice(discount)}` : '0đ'}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-text-gray">Giảm giá</span><span className="text-accent">{discount > 0 ? `-${formatPrice(discount)}` : '0đ'}</span></div>
               <div className="border-t border-border pt-3 flex justify-between"><span className="font-semibold">Tổng</span><span className="text-lg font-bold text-primary">{formatPrice(total)}</span></div>
             </div>
           </div>

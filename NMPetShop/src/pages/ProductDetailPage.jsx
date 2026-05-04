@@ -56,12 +56,24 @@ const ProductDetailPage = () => {
     addToCart(product, quantity);
   };
 
+  const getCategoryInfo = (category) => {
+    const cat = category.toLowerCase();
+    if (cat.includes('chó')) return { label: 'Sản phẩm cho chó', path: '/san-pham?category=cho' };
+    if (cat.includes('mèo')) return { label: 'Sản phẩm cho mèo', path: '/san-pham?category=meo' };
+    if (cat.includes('phụ kiện')) return { label: 'Phụ kiện', path: '/san-pham?category=phu-kien' };
+    if (cat.includes('đồ chơi')) return { label: 'Đồ chơi', path: '/san-pham?category=do-choi' };
+    if (cat.includes('chăm sóc') || cat.includes('sức khỏe')) return { label: 'Chăm sóc sức khỏe', path: '/san-pham?category=suc-khoe' };
+    return { label: 'Danh sách sản phẩm', path: '/san-pham' };
+  };
+
+  const categoryInfo = getCategoryInfo(product.category);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <nav className="flex items-center gap-2 text-sm text-text-gray mb-6">
         <Link to="/" className="hover:text-primary">Trang chủ</Link>
         <span>/</span>
-        <Link to="/" className="hover:text-primary">Danh sách sản phẩm</Link>
+        <Link to={categoryInfo.path} className="hover:text-primary">{categoryInfo.label}</Link>
         <span>/</span>
         <span className="text-text-dark font-medium">{product.name}</span>
       </nav>
@@ -119,7 +131,7 @@ const ProductDetailPage = () => {
               <span className="w-12 text-center font-medium">{quantity}</span>
               <button onClick={() => setQuantity(quantity + 1)} className="p-3 hover:bg-bg-gray transition-colors"><FiPlus size={16} /></button>
             </div>
-            <button 
+            <button
               onClick={handleAddToCart}
               className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-colors"
             >

@@ -35,30 +35,30 @@ const HeroBanner = () => {
   return (
     <section className="w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       <div className="relative max-w-7xl mx-auto rounded-3xl overflow-hidden shadow-xl group">
-        
+
         {/* Slides Container */}
-        <div 
+        <div
           className="flex transition-transform duration-700 ease-in-out h-[320px] sm:h-[420px] md:h-[520px] lg:h-[620px] xl:h-[680px]"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
           {banners.map((banner, index) => (
-            <img 
+            <img
               key={index}
-              src={banner} 
-              alt={`NM Pet Shop Banner ${index + 1}`} 
+              src={banner}
+              alt={`NM Pet Shop Banner ${index + 1}`}
               className="w-full h-full object-cover object-top flex-shrink-0"
             />
           ))}
         </div>
 
         {/* Navigation Arrows (visible on hover) */}
-        <button 
+        <button
           onClick={prevSlide}
           className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/20 hover:bg-black/40 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-sm z-10"
         >
           <FiChevronLeft size={24} />
         </button>
-        <button 
+        <button
           onClick={nextSlide}
           className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/20 hover:bg-black/40 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-sm z-10"
         >
@@ -71,9 +71,8 @@ const HeroBanner = () => {
             <button
               key={index}
               onClick={() => goToSlide(index)}
-              className={`h-2.5 rounded-full transition-all duration-300 ${
-                index === currentIndex ? 'bg-white w-8' : 'bg-white/50 hover:bg-white/80 w-2.5'
-              }`}
+              className={`h-2.5 rounded-full transition-all duration-300 ${index === currentIndex ? 'bg-white w-8' : 'bg-white/50 hover:bg-white/80 w-2.5'
+                }`}
             />
           ))}
         </div>

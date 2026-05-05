@@ -1,23 +1,26 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiTag, FiCalendar, FiFilter, FiChevronDown, FiX } from 'react-icons/fi';
+import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiTag, FiCalendar, FiFilter, FiChevronDown, FiX, FiLoader } from 'react-icons/fi';
+import { fetchPromotions, createPromotion, updatePromotion, deletePromotion } from '../../services/promotionApi';
 
-const defaultDiscounts = [
-  { id: 1, code: 'SUMMER2024', description: 'Giảm giá mùa hè', type: 'Phần trăm', value: '15%', minOrder: 500000, startDate: '2024-06-01', endDate: '2024-06-30', status: 'Đang diễn ra', statusColor: 'bg-success/10 text-success' },
-  { id: 2, code: 'NEWUSER50', description: 'Ưu đãi khách hàng mới', type: 'Số tiền', value: '50.000đ', minOrder: 200000, startDate: '2024-01-01', endDate: '2024-12-31', status: 'Đang diễn ra', statusColor: 'bg-success/10 text-success' },
-  { id: 3, code: 'FREESHIP', description: 'Miễn phí vận chuyển toàn quốc', type: 'Phí ship', value: '100%', minOrder: 1000000, startDate: '2023-10-15', endDate: '2023-10-31', status: 'Đã kết thúc', statusColor: 'bg-text-light/10 text-text-gray' },
-  { id: 4, code: 'FLASHCAT', description: 'Flash sale đồ dùng cho mèo', type: 'Phần trăm', value: '20%', minOrder: 0, startDate: '2024-11-25', endDate: '2024-11-27', status: 'Sắp diễn ra', statusColor: 'bg-info/10 text-info' },
-  { id: 5, code: 'VIPMEM', description: 'Giảm giá hội viên VIP', type: 'Phần trăm', value: '10%', minOrder: 0, startDate: '2024-01-01', endDate: '2024-12-31', status: 'Đang diễn ra', statusColor: 'bg-success/10 text-success' },
-];
-
-const discountTypes = ['Phần trăm', 'Số tiền', 'Phí ship'];
-const statusOptions = ['Đang diễn ra', 'Sắp diễn ra', 'Đã kết thúc'];
+const discountTypes = ['Percentage', 'Fixed Amount', 'Free Shipping'];
+const typeLabels = {
+  'Percentage': 'Phần trăm',
+  'Fixed Amount': 'Số tiền',
+  'Free Shipping': 'Phí ship'
+};
+const statusOptions = ['Active', 'Upcoming', 'Expired'];
+const statusLabels = {
+  'Active': 'Đang diễn ra',
+  'Upcoming': 'Sắp diễn ra',
+  'Expired': 'Đã kết thúc'
+};
 const timeOptions = ['Tất cả', 'Tháng này', 'Năm nay'];
 
+import Pagination from '../../components/admin/Pagination';
+
 const AdminDiscounts = () => {
-  const [discounts, setDiscounts] = useState(() => {
-    const saved = localStorage.getItem('nm_petshop_discounts');
-    return saved ? JSON.parse(saved) : defaultDiscounts;
-  });
+  const [discounts, setDiscounts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -26,9 +29,9 @@ const AdminDiscounts = () => {
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
 
-  const typeRef = useRef(null);
-  const statusRef = useRef(null);
-  const timeRef = useRef(null);
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [editingId, setEditingId] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -36,16 +39,46 @@ const AdminDiscounts = () => {
   const [formData, setFormData] = useState({
     code: '',
     description: '',
-    type: 'Phần trăm',
-    value: '',
-    minOrder: 0,
+    discountType: 'Percentage',
+    discountValue: '',
+    minOrderAmount: 0,
     startDate: '',
     endDate: ''
   });
 
+  const typeRef = useRef(null);
+  const statusRef = useRef(null);
+  const timeRef = useRef(null);
+
+  const loadPromotions = async (currentPage = page) => {
+    setLoading(true);
+    try {
+      const params = {
+        page: currentPage,
+        limit: 20
+      };
+      if (typeFilter !== 'All') params.discountType = typeFilter;
+      if (statusFilter !== 'All') params.status = statusFilter;
+      if (search) params.search = search;
+      
+      const data = await fetchPromotions(params);
+      setDiscounts(data.promotions);
+      setTotalPages(data.totalPages);
+    } catch (err) {
+      console.error('Failed to load promotions:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem('nm_petshop_discounts', JSON.stringify(discounts));
-  }, [discounts]);
+    loadPromotions(1);
+    setPage(1);
+  }, [typeFilter, statusFilter, search]);
+
+  useEffect(() => {
+    loadPromotions(page);
+  }, [page]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -63,11 +96,6 @@ const AdminDiscounts = () => {
     const currentYear = now.getFullYear();
 
     return discounts.filter(d => {
-      const matchesSearch = d.code.toLowerCase().includes(search.toLowerCase()) ||
-        d.description.toLowerCase().includes(search.toLowerCase());
-      const matchesType = typeFilter === 'All' || d.type === typeFilter;
-      const matchesStatus = statusFilter === 'All' || d.status === statusFilter;
-
       let matchesTime = true;
       const startDate = new Date(d.startDate);
       if (timeFilter === 'Tháng này') {
@@ -76,33 +104,47 @@ const AdminDiscounts = () => {
         matchesTime = startDate.getFullYear() === currentYear;
       }
 
-      return matchesSearch && matchesType && matchesStatus && matchesTime;
+      return matchesTime;
     });
-  }, [search, typeFilter, statusFilter, timeFilter, discounts]);
+  }, [timeFilter, discounts]);
 
   const formatDate = (d) => {
     if (!d) return '';
-    const parts = d.split('-');
-    if (parts.length !== 3) return d;
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    return new Date(d).toLocaleDateString('vi-VN');
   };
 
-  const handleDeleteDiscount = (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa mã giảm giá này không? Thao tác này không thể hoàn tác.')) {
-      setDiscounts(prev => prev.filter(d => d.id !== id));
+  const getStatusInfo = (d) => {
+    const now = new Date();
+    const start = new Date(d.startDate);
+    const end = new Date(d.endDate);
+    
+    if (now >= start && now <= end) return { label: 'Đang diễn ra', color: 'bg-success/10 text-success' };
+    if (now < start) return { label: 'Sắp diễn ra', color: 'bg-info/10 text-info' };
+    return { label: 'Đã kết thúc', color: 'bg-text-light/10 text-text-gray' };
+  };
+
+  const handleDeleteDiscount = async (id) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa mã giảm giá này không?')) {
+      try {
+        await deletePromotion(id);
+        setDiscounts(prev => prev.filter(d => d._id !== id));
+        alert('Xóa mã giảm giá thành công!');
+      } catch (err) {
+        alert('Lỗi khi xóa mã giảm giá!');
+      }
     }
   };
 
   const handleEditDiscount = (d) => {
-    setEditingId(d.id);
+    setEditingId(d._id);
     setFormData({
       code: d.code,
       description: d.description,
-      type: d.type,
-      value: d.type === 'Phần trăm' ? d.value.replace('%', '') : (d.type === 'Số tiền' ? d.value.replace(/\./g, '').replace('đ', '') : '100'),
-      minOrder: d.minOrder,
-      startDate: d.startDate,
-      endDate: d.endDate
+      discountType: d.discountType,
+      discountValue: d.discountValue,
+      minOrderAmount: d.minOrderAmount,
+      startDate: d.startDate.split('T')[0],
+      endDate: d.endDate.split('T')[0]
     });
     setShowAddModal(true);
   };
@@ -111,69 +153,44 @@ const AdminDiscounts = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'minOrder' ? Number(value) : value
+      [name]: (name === 'minOrderAmount' || name === 'discountValue') ? Number(value) : value
     }));
   };
 
-  const handleSaveDiscount = (e) => {
+  const handleSaveDiscount = async (e) => {
     e.preventDefault();
-    if (!formData.code || !formData.value || !formData.startDate || !formData.endDate) {
+    if (!formData.code || !formData.discountValue || !formData.startDate || !formData.endDate) {
       alert('Vui lòng nhập đầy đủ các trường bắt buộc (*)');
       return;
     }
 
     setIsSaving(true);
-    
-    setTimeout(() => {
-      const now = new Date();
-      const start = new Date(formData.startDate);
-      const end = new Date(formData.endDate);
-      
-      let status = 'Sắp diễn ra';
-      let statusColor = 'bg-info/10 text-info';
-      
-      if (now >= start && now <= end) {
-        status = 'Đang diễn ra';
-        statusColor = 'bg-success/10 text-success';
-      } else if (now > end) {
-        status = 'Đã kết thúc';
-        statusColor = 'bg-text-light/10 text-text-gray';
-      }
-
-      const updatedValue = formData.type === 'Phần trăm' ? `${formData.value}%` : (formData.type === 'Số tiền' ? `${new Intl.NumberFormat('vi-VN').format(formData.value)}đ` : '100%');
-
+    try {
+      const data = { ...formData, code: formData.code.toUpperCase() };
       if (editingId) {
-        setDiscounts(prev => prev.map(d => 
-          d.id === editingId 
-            ? { ...d, ...formData, code: formData.code.toUpperCase(), status, statusColor, value: updatedValue } 
-            : d
-        ));
+        const result = await updatePromotion(editingId, data);
+        setDiscounts(prev => prev.map(d => d._id === editingId ? result : d));
       } else {
-        const newDiscount = {
-          id: discounts.length > 0 ? Math.max(...discounts.map(d => d.id)) + 1 : 1,
-          ...formData,
-          code: formData.code.toUpperCase(),
-          status,
-          statusColor,
-          value: updatedValue
-        };
-        setDiscounts(prev => [newDiscount, ...prev]);
+        const result = await createPromotion(data);
+        setDiscounts(prev => [result, ...prev]);
       }
-
-      setIsSaving(false);
       setShowAddModal(false);
       setEditingId(null);
       setFormData({
         code: '',
         description: '',
-        type: 'Phần trăm',
-        value: '',
-        minOrder: 0,
+        discountType: 'Percentage',
+        discountValue: '',
+        minOrderAmount: 0,
         startDate: '',
         endDate: ''
       });
-      alert(editingId ? 'Cập nhật mã giảm giá thành công!' : 'Thêm mã giảm giá thành công!');
-    }, 600);
+      alert(editingId ? 'Cập nhật thành công!' : 'Thêm thành công!');
+    } catch (err) {
+      alert('Lỗi khi lưu mã giảm giá!');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCloseModal = () => {
@@ -182,9 +199,9 @@ const AdminDiscounts = () => {
     setFormData({
       code: '',
       description: '',
-      type: 'Phần trăm',
-      value: '',
-      minOrder: 0,
+      discountType: 'Percentage',
+      discountValue: '',
+      minOrderAmount: 0,
       startDate: '',
       endDate: ''
     });
@@ -230,7 +247,7 @@ const AdminDiscounts = () => {
           >
             <div className="flex items-center gap-2 overflow-hidden">
               <FiFilter size={16} className="flex-shrink-0" />
-              <span className="truncate">{typeFilter === 'All' ? 'Loại giảm giá' : typeFilter}</span>
+              <span className="truncate">{typeFilter === 'All' ? 'Loại giảm giá' : typeLabels[typeFilter]}</span>
             </div>
             <FiChevronDown size={14} className={`transition-transform flex-shrink-0 ${showTypeDropdown ? 'rotate-180' : ''}`} />
           </button>
@@ -239,7 +256,7 @@ const AdminDiscounts = () => {
               <div onClick={() => { setTypeFilter('All'); setShowTypeDropdown(false); }} className="px-4 py-2.5 text-sm hover:bg-bg-gray cursor-pointer border-b border-border font-medium">Tất cả loại</div>
               {discountTypes.map(t => (
                 <div key={t} onClick={() => { setTypeFilter(t); setShowTypeDropdown(false); }} className={`px-4 py-2.5 text-sm hover:bg-bg-gray cursor-pointer ${typeFilter === t ? 'text-primary bg-primary/5 font-semibold' : 'text-text-gray'}`}>
-                  {t}
+                  {typeLabels[t]}
                 </div>
               ))}
             </div>
@@ -275,7 +292,7 @@ const AdminDiscounts = () => {
             onClick={() => setShowStatusDropdown(!showStatusDropdown)}
             className={`flex items-center justify-between gap-2 px-4 h-full w-[160px] border rounded-xl text-sm font-medium transition-all ${statusFilter !== 'All' ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'border-border text-text-gray hover:border-primary bg-white'}`}
           >
-            <span className="truncate">{statusFilter === 'All' ? 'Trạng thái' : statusFilter}</span>
+            <span className="truncate">{statusFilter === 'All' ? 'Trạng thái' : statusLabels[statusFilter]}</span>
             <FiChevronDown size={14} className={`flex-shrink-0 transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
           </button>
           {showStatusDropdown && (
@@ -283,7 +300,7 @@ const AdminDiscounts = () => {
               <div onClick={() => { setStatusFilter('All'); setShowStatusDropdown(false); }} className="px-4 py-2.5 text-sm hover:bg-bg-gray cursor-pointer border-b border-border font-medium">Tất cả trạng thái</div>
               {statusOptions.map(s => (
                 <div key={s} onClick={() => { setStatusFilter(s); setShowStatusDropdown(false); }} className={`px-4 py-2.5 text-sm hover:bg-bg-gray cursor-pointer ${statusFilter === s ? 'text-primary bg-primary/5 font-semibold' : 'text-text-gray'}`}>
-                  {s}
+                  {statusLabels[s]}
                 </div>
               ))}
             </div>
@@ -317,58 +334,73 @@ const AdminDiscounts = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {filteredDiscounts.length > 0 ? (
-              filteredDiscounts.map((d) => (
-                <tr key={d.id} className="hover:bg-bg-gray/30 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform">
-                        <FiTag size={18} />
+            {loading ? (
+              <tr>
+                <td colSpan="6" className="px-6 py-20 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <FiLoader size={32} className="animate-spin text-primary" />
+                    <span className="text-sm text-text-gray font-medium">Đang tải mã giảm giá...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : filteredDiscounts.length > 0 ? (
+              filteredDiscounts.map((d) => {
+                const statusInfo = getStatusInfo(d);
+                return (
+                  <tr key={d._id} className="hover:bg-bg-gray/30 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform">
+                          <FiTag size={18} />
+                        </div>
+                        <div>
+                          <span className="text-sm font-black text-text-dark block tracking-tight uppercase">{d.code}</span>
+                          <span className="text-[11px] text-text-gray mt-0.5 block font-medium">{d.description}</span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-sm font-black text-text-dark block tracking-tight uppercase">{d.code}</span>
-                        <span className="text-[11px] text-text-gray mt-0.5 block font-medium">{d.description}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-black text-primary block">
+                        {d.discountType === 'Percentage' ? `${d.discountValue}%` : 
+                         d.discountType === 'Fixed Amount' ? `${new Intl.NumberFormat('vi-VN').format(d.discountValue)}đ` : 'Miễn phí'}
+                      </span>
+                      <span className="text-[11px] font-bold text-text-light uppercase tracking-wider">{typeLabels[d.discountType]}</span>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-bold text-text-dark">
+                      {d.minOrderAmount > 0 ? new Intl.NumberFormat('vi-VN').format(d.minOrderAmount) + 'đ' : 'Không giới hạn'}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-text-gray">
+                        <FiCalendar size={14} className="text-text-light" />
+                        <span>{formatDate(d.startDate)} - {formatDate(d.endDate)}</span>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-black text-primary block">{d.value}</span>
-                    <span className="text-[11px] font-bold text-text-light uppercase tracking-wider">{d.type}</span>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-text-dark">
-                    {d.minOrder > 0 ? new Intl.NumberFormat('vi-VN').format(d.minOrder) + 'đ' : 'Không giới hạn'}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-text-gray">
-                      <FiCalendar size={14} className="text-text-light" />
-                      <span>{formatDate(d.startDate)} - {formatDate(d.endDate)}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${d.statusColor}`}>
-                      {d.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => handleEditDiscount(d)}
-                        className="p-2 text-text-light hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
-                        title="Chỉnh sửa"
-                      >
-                        <FiEdit2 size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteDiscount(d.id)}
-                        className="p-2 text-text-light hover:text-danger hover:bg-danger/10 rounded-lg transition-all"
-                        title="Xóa"
-                      >
-                        <FiTrash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusInfo.color}`}>
+                        {statusInfo.label}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleEditDiscount(d)}
+                          className="p-2 text-text-light hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                          title="Chỉnh sửa"
+                        >
+                          <FiEdit2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDiscount(d._id)}
+                          className="p-2 text-text-light hover:text-danger hover:bg-danger/10 rounded-lg transition-all"
+                          title="Xóa"
+                        >
+                          <FiTrash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
                 <td colSpan="6" className="px-6 py-20 text-center">
@@ -382,6 +414,12 @@ const AdminDiscounts = () => {
           </tbody>
         </table>
       </div>
+
+      <Pagination 
+        currentPage={page} 
+        totalPages={totalPages} 
+        onPageChange={(p) => setPage(p)} 
+      />
 
       {/* Add/Edit Discount Modal */}
       {showAddModal && (
@@ -421,15 +459,15 @@ const AdminDiscounts = () => {
                 {/* Value */}
                 <div className="col-span-2 md:col-span-1">
                   <label className="block text-xs font-bold text-text-gray uppercase tracking-wider mb-2">
-                    {formData.type === 'Phần trăm' ? 'Phần trăm giảm (%) *' : (formData.type === 'Số tiền' ? 'Số tiền giảm (VNĐ) *' : 'Mức giảm (Mặc định 100%)')}
+                    {formData.discountType === 'Percentage' ? 'Phần trăm giảm (%) *' : (formData.discountType === 'Fixed Amount' ? 'Số tiền giảm (VNĐ) *' : 'Mức giảm (Mặc định 100%)')}
                   </label>
                   <input
                     type="number"
-                    name="value"
-                    value={formData.value}
+                    name="discountValue"
+                    value={formData.discountValue}
                     onChange={handleInputChange}
-                    disabled={formData.type === 'Phí ship'}
-                    placeholder={formData.type === 'Phí ship' ? '100' : 'Nhập giá trị...'}
+                    disabled={formData.discountType === 'Free Shipping'}
+                    placeholder={formData.discountType === 'Free Shipping' ? '100' : 'Nhập giá trị...'}
                     className="w-full px-4 py-3 border border-border rounded-xl text-sm font-bold text-text-dark focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all disabled:bg-bg-gray disabled:cursor-not-allowed"
                   />
                 </div>
@@ -455,22 +493,22 @@ const AdminDiscounts = () => {
                       <button
                         key={type}
                         type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, type }))}
-                        className={`flex-1 py-2.5 rounded-xl text-[11px] font-bold transition-all border ${formData.type === type ? 'bg-primary border-primary text-white shadow-md shadow-primary/20' : 'bg-white border-border text-text-gray hover:border-primary hover:text-primary'}`}
+                        onClick={() => setFormData(prev => ({ ...prev, discountType: type, discountValue: type === 'Free Shipping' ? 100 : prev.discountValue }))}
+                        className={`flex-1 py-2.5 rounded-xl text-[11px] font-bold transition-all border ${formData.discountType === type ? 'bg-primary border-primary text-white shadow-md shadow-primary/20' : 'bg-white border-border text-text-gray hover:border-primary hover:text-primary'}`}
                       >
-                        {type}
+                        {typeLabels[type]}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Min Order */}
+                {/* Min Order Amount */}
                 <div className="col-span-2 md:col-span-1">
                   <label className="block text-xs font-bold text-text-gray uppercase tracking-wider mb-2">Đơn tối thiểu (VNĐ)</label>
                   <input
                     type="number"
-                    name="minOrder"
-                    value={formData.minOrder}
+                    name="minOrderAmount"
+                    value={formData.minOrderAmount}
                     onChange={handleInputChange}
                     placeholder="0"
                     className="w-full px-4 py-3 border border-border rounded-xl text-sm font-bold text-text-dark focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all"

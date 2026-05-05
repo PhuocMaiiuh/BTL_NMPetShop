@@ -1,58 +1,77 @@
 import { useState, useEffect, useMemo } from 'react';
-import { FiPackage, FiShoppingBag, FiUsers, FiDollarSign, FiTrendingUp, FiTrendingDown, FiClock, FiCheck, FiTruck, FiX } from 'react-icons/fi';
+import { FiPackage, FiShoppingBag, FiUsers, FiDollarSign, FiTrendingUp, FiTrendingDown, FiLoader } from 'react-icons/fi';
+import { fetchProducts } from '../../services/productApi';
+import { fetchOrders, fetchOrderStats } from '../../services/orderApi';
+import { fetchUsers } from '../../services/userApi';
 
 const AdminDashboard = () => {
-  const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
+  const [productsCount, setProductsCount] = useState(0);
+  const [usersCount, setUsersCount] = useState(0);
+  const [orderStats, setOrderStats] = useState({ totalOrders: 0, totalRevenue: 0, pendingOrders: 0 });
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedProducts = JSON.parse(localStorage.getItem('nm_petshop_products') || '[]');
-    const savedOrders = JSON.parse(localStorage.getItem('nm_petshop_orders') || '[]');
-    setProducts(savedProducts);
-    setOrders(savedOrders);
+    const loadDashboardData = async () => {
+      setLoading(true);
+      try {
+        const [prodData, userData, ordStats, ordData] = await Promise.all([
+          fetchProducts({ limit: 1 }), // Just to get total
+          fetchUsers({ limit: 1 }),    // Just to get total (backend currently returns array, I'll use length)
+          fetchOrderStats(),
+          fetchOrders({ limit: 5 })    // Recent 5
+        ]);
+        
+        setProductsCount(prodData.total || 0);
+        setUsersCount(userData.length || 0); // Backend returns array for now
+        setOrderStats(ordStats);
+        setRecentOrders(ordData.slice(0, 5));
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadDashboardData();
   }, []);
 
   const stats = useMemo(() => {
-    const totalProducts = products.length;
-    const totalOrders = orders.length;
-    
-    // Revenue from completed orders
-    const totalRevenue = orders
-      .filter(o => o.status === 'Hoàn thành')
-      .reduce((sum, o) => sum + o.total, 0);
-
-    // Unique customers based on phone or email
-    const uniqueCustomers = new Set(orders.map(o => o.phone || o.email)).size;
-
     return [
-      { label: 'Tổng sản phẩm', value: totalProducts.toLocaleString(), icon: <FiPackage size={20} />, change: '+2.4%', up: true, color: 'bg-blue-50 text-blue-600' },
-      { label: 'Đơn hàng', value: totalOrders.toLocaleString(), icon: <FiShoppingBag size={20} />, change: '+5.1%', up: true, color: 'bg-green-50 text-green-600' },
-      { label: 'Khách hàng', value: uniqueCustomers.toLocaleString(), icon: <FiUsers size={20} />, change: '+1.2%', up: true, color: 'bg-purple-50 text-purple-600' },
+      { label: 'Tổng sản phẩm', value: productsCount.toLocaleString(), icon: <FiPackage size={20} />, change: '+2.4%', up: true, color: 'bg-blue-50 text-blue-600' },
+      { label: 'Đơn hàng', value: orderStats.totalOrders.toLocaleString(), icon: <FiShoppingBag size={20} />, change: '+5.1%', up: true, color: 'bg-green-50 text-green-600' },
+      { label: 'Khách hàng', value: usersCount.toLocaleString(), icon: <FiUsers size={20} />, change: '+1.2%', up: true, color: 'bg-purple-50 text-purple-600' },
       { 
         label: 'Doanh thu', 
-        value: totalRevenue >= 1000000 ? (totalRevenue / 1000000).toFixed(1) + 'M' : new Intl.NumberFormat('vi-VN').format(totalRevenue) + 'đ', 
+        value: orderStats.totalRevenue >= 1000000 
+          ? (orderStats.totalRevenue / 1000000).toFixed(1) + 'M' 
+          : new Intl.NumberFormat('vi-VN').format(orderStats.totalRevenue) + 'đ', 
         icon: <FiDollarSign size={20} />, 
         change: '+3.8%', 
         up: true, 
         color: 'bg-amber-50 text-amber-600' 
       },
     ];
-  }, [products, orders]);
-
-  const recentOrders = useMemo(() => {
-    return [...orders]
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 5);
-  }, [orders]);
+  }, [productsCount, orderStats, usersCount]);
 
   const getStatusConfig = (status) => {
     switch (status) {
-      case 'Hoàn thành': return 'bg-success/10 text-success';
-      case 'Đang giao': return 'bg-secondary/10 text-secondary';
-      case 'Đang xử lý': return 'bg-info/10 text-info';
-      case 'Chờ xác nhận': return 'bg-warning/10 text-warning';
-      case 'Đã hủy': return 'bg-danger/10 text-danger';
+      case 'Delivered': return 'bg-success/10 text-success';
+      case 'Shipping': return 'bg-secondary/10 text-secondary';
+      case 'Confirmed': return 'bg-info/10 text-info';
+      case 'Pending': return 'bg-warning/10 text-warning';
+      case 'Cancelled': return 'bg-danger/10 text-danger';
       default: return 'bg-gray-100 text-gray-600';
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'Delivered': return 'Hoàn thành';
+      case 'Shipping': return 'Đang giao';
+      case 'Confirmed': return 'Đã xác nhận';
+      case 'Pending': return 'Chờ xử lý';
+      case 'Cancelled': return 'Đã hủy';
+      default: return status;
     }
   };
 
@@ -62,6 +81,14 @@ const AdminDashboard = () => {
   };
 
   const formatPrice = (p) => new Intl.NumberFormat('vi-VN').format(p) + 'đ';
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-32">
+        <FiLoader size={48} className="animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="pb-10">
@@ -77,7 +104,7 @@ const AdminDashboard = () => {
             <div className="flex items-center justify-between mb-4">
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${stat.color} shadow-sm`}>{stat.icon}</div>
               <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg ${stat.up ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
-                {stat.up ? <FiTrendingUp size={14} /> : <FiTrendingDown size={14} />}
+                <FiTrendingUp size={14} />
                 {stat.change}
               </div>
             </div>
@@ -110,19 +137,19 @@ const AdminDashboard = () => {
             <tbody className="divide-y divide-border">
               {recentOrders.length > 0 ? (
                 recentOrders.map((o) => (
-                  <tr key={o.id} className="hover:bg-bg-gray/30 transition-colors group">
-                    <td className="px-4 py-4 text-sm font-black text-primary uppercase">#{o.id}</td>
+                  <tr key={o._id} className="hover:bg-bg-gray/30 transition-colors group">
+                    <td className="px-4 py-4 text-sm font-black text-primary uppercase">#{o.orderId}</td>
                     <td className="px-4 py-4">
                       <div className="flex flex-col">
-                        <span className="text-sm font-bold text-text-dark">{o.customer}</span>
+                        <span className="text-sm font-bold text-text-dark">{o.customerName}</span>
                         <span className="text-[10px] text-text-light font-medium">{o.phone}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-sm font-medium text-text-gray">{formatDate(o.date)}</td>
-                    <td className="px-4 py-4 text-sm font-black text-text-dark">{formatPrice(o.total)}</td>
+                    <td className="px-4 py-4 text-sm font-medium text-text-gray">{formatDate(o.createdAt)}</td>
+                    <td className="px-4 py-4 text-sm font-black text-text-dark">{formatPrice(o.totalAmount)}</td>
                     <td className="px-4 py-4">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${getStatusConfig(o.status)}`}>
-                        {o.status}
+                        {getStatusLabel(o.status)}
                       </span>
                     </td>
                   </tr>

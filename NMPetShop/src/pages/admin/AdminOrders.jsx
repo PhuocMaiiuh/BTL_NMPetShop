@@ -1,95 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { FiSearch, FiEye, FiFilter, FiChevronDown, FiPackage, FiTruck, FiCheck, FiX, FiClock, FiPrinter, FiDownload } from 'react-icons/fi';
-
-const defaultOrders = [
-  {
-    id: 'NM-9876',
-    customer: 'Nguyễn Văn A',
-    phone: '0901234567',
-    email: 'vanya@example.com',
-    address: '123 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh',
-    date: '2023-10-24T10:30:00Z',
-    status: 'Hoàn thành',
-    paymentMethod: 'Thanh toán khi nhận hàng (COD)',
-    items: [
-      { id: 1, name: 'Hạt Khô Cao Cấp Royal Canin', qty: 2, price: 850000, image: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=80&h=80&fit=crop' },
-      { id: 2, name: 'Vòng cổ da cao cấp cho chó', qty: 1, price: 250000, image: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=80&h=80&fit=crop' },
-    ],
-    subtotal: 1950000,
-    shipping: 30000,
-    discount: 50000,
-    total: 1930000,
-  },
-  {
-    id: 'NM-9877',
-    customer: 'Trần Thị B',
-    phone: '0912345678',
-    email: 'thib@example.com',
-    address: '456 Đường CMT8, Quận 3, TP. Hồ Chí Minh',
-    date: '2023-10-25T14:20:00Z',
-    status: 'Đang giao',
-    paymentMethod: 'Chuyển khoản ngân hàng',
-    items: [
-      { id: 3, name: 'Đệm Ngủ Tròn cho mèo', qty: 1, price: 350000, image: 'https://images.unsplash.com/photo-1535930749574-1399327ce78f?w=80&h=80&fit=crop' },
-    ],
-    subtotal: 350000,
-    shipping: 30000,
-    discount: 0,
-    total: 380000,
-  },
-  {
-    id: 'NM-9878',
-    customer: 'Lê Văn C',
-    phone: '0987654321',
-    email: 'vanc@example.com',
-    address: '789 Đường Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh',
-    date: '2023-10-26T09:15:00Z',
-    status: 'Đang xử lý',
-    paymentMethod: 'Ví MoMo',
-    items: [
-      { id: 4, name: 'Cần Câu Mèo lông vũ', qty: 3, price: 45000, image: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=80&h=80&fit=crop' },
-      { id: 5, name: 'Sữa tắm thảo dược', qty: 1, price: 195000, image: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=80&h=80&fit=crop' },
-    ],
-    subtotal: 330000,
-    shipping: 20000,
-    discount: 20000,
-    total: 330000,
-  },
-  {
-    id: 'NM-9879',
-    customer: 'Phạm Văn D',
-    phone: '0905556667',
-    email: 'vand@example.com',
-    address: '101 Đường Võ Văn Kiệt, Quận 5, TP. Hồ Chí Minh',
-    date: '2023-10-26T16:45:00Z',
-    status: 'Chờ xác nhận',
-    paymentMethod: 'Thanh toán khi nhận hàng (COD)',
-    items: [
-      { id: 1, name: 'Hạt Khô Cao Cấp Royal Canin', qty: 1, price: 850000, image: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=80&h=80&fit=crop' },
-    ],
-    subtotal: 850000,
-    shipping: 30000,
-    discount: 0,
-    total: 880000,
-  },
-  {
-    id: 'NM-9880',
-    customer: 'Hoàng Thị E',
-    phone: '0933445566',
-    email: 'thie@example.com',
-    address: '202 Đường Lý Thường Kiệt, Quận 10, TP. Hồ Chí Minh',
-    date: '2023-10-27T11:10:00Z',
-    status: 'Đã hủy',
-    paymentMethod: 'Ví MoMo',
-    items: [
-      { id: 2, name: 'Vòng cổ da cao cấp cho chó', qty: 2, price: 250000, image: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=80&h=80&fit=crop' },
-    ],
-    subtotal: 500000,
-    shipping: 30000,
-    discount: 50000,
-    total: 480000,
-  },
-];
+import { FiSearch, FiEye, FiFilter, FiChevronDown, FiPackage, FiTruck, FiCheck, FiX, FiClock, FiPrinter, FiDownload, FiLoader } from 'react-icons/fi';
+import { fetchOrders, updateOrderStatus } from '../../services/orderApi';
 
 const formatPrice = (p) => new Intl.NumberFormat('vi-VN').format(p) + 'đ';
 const formatDate = (dateString) => {
@@ -104,18 +15,18 @@ const formatDate = (dateString) => {
 };
 
 const statusConfig = {
-  'Chờ xác nhận': { color: 'text-warning bg-warning/10', icon: <FiClock size={14} /> },
-  'Đang xử lý': { color: 'text-info bg-info/10', icon: <FiPackage size={14} /> },
-  'Đang giao': { color: 'text-secondary bg-secondary/10', icon: <FiTruck size={14} /> },
-  'Hoàn thành': { color: 'text-success bg-success/10', icon: <FiCheck size={14} /> },
-  'Đã hủy': { color: 'text-danger bg-danger/10', icon: <FiX size={14} /> },
+  'Pending': { label: 'Chờ xác nhận', color: 'text-warning bg-warning/10', icon: <FiClock size={14} /> },
+  'Confirmed': { label: 'Đang xử lý', color: 'text-info bg-info/10', icon: <FiPackage size={14} /> },
+  'Shipping': { label: 'Đang giao', color: 'text-secondary bg-secondary/10', icon: <FiTruck size={14} /> },
+  'Delivered': { label: 'Hoàn thành', color: 'text-success bg-success/10', icon: <FiCheck size={14} /> },
+  'Cancelled': { label: 'Đã hủy', color: 'text-danger bg-danger/10', icon: <FiX size={14} /> },
 };
 
+import Pagination from '../../components/admin/Pagination';
+
 const AdminOrders = () => {
-  const [orders, setOrders] = useState(() => {
-    const saved = localStorage.getItem('nm_petshop_orders');
-    return saved ? JSON.parse(saved) : defaultOrders;
-  });
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [sortOrder, setSortOrder] = useState('newest'); // newest, oldest, highest, lowest
@@ -123,10 +34,42 @@ const AdminOrders = () => {
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const statusRef = useRef(null);
   const sortRef = useRef(null);
 
-  // Close dropdown when clicking outside
+  const loadOrders = async (currentPage = page) => {
+    setLoading(true);
+    try {
+      const params = {
+        page: currentPage,
+        limit: 20
+      };
+      if (statusFilter !== 'All') params.status = statusFilter;
+      if (search) params.search = search;
+      
+      const data = await fetchOrders(params);
+      setOrders(data.orders);
+      setTotalPages(data.totalPages);
+    } catch (err) {
+      console.error('Failed to load orders:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadOrders(1);
+    setPage(1);
+  }, [statusFilter, search]);
+
+  useEffect(() => {
+    loadOrders(page);
+  }, [page]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (statusRef.current && !statusRef.current.contains(event.target)) setShowStatusDropdown(false);
@@ -136,38 +79,33 @@ const AdminOrders = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Sync with localStorage
-  useEffect(() => {
-    localStorage.setItem('nm_petshop_orders', JSON.stringify(orders));
-  }, [orders]);
-
   const filteredOrders = useMemo(() => {
-    let result = orders.filter(order => {
-      const matchesSearch = order.id.toLowerCase().includes(search.toLowerCase()) ||
-        order.customer.toLowerCase().includes(search.toLowerCase()) ||
-        order.phone.includes(search);
-      const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
+    let result = [...orders];
 
-    // Sort
+    // Sort (client-side for now for responsiveness)
     result.sort((a, b) => {
-      if (sortOrder === 'newest') return new Date(b.date) - new Date(a.date);
-      if (sortOrder === 'oldest') return new Date(a.date) - new Date(b.date);
-      if (sortOrder === 'highest') return b.total - a.total;
-      if (sortOrder === 'lowest') return a.total - b.total;
+      if (sortOrder === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
+      if (sortOrder === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
+      if (sortOrder === 'highest') return b.totalAmount - a.totalAmount;
+      if (sortOrder === 'lowest') return a.totalAmount - b.totalAmount;
       return 0;
     });
 
     return result;
-  }, [orders, search, statusFilter, sortOrder]);
+  }, [orders, sortOrder]);
 
-  const handleUpdateStatus = (orderId, newStatus) => {
-    setOrders(prev => prev.map(order =>
-      order.id === orderId ? { ...order, status: newStatus } : order
-    ));
-    if (selectedOrder && selectedOrder.id === orderId) {
-      setSelectedOrder({ ...selectedOrder, status: newStatus });
+  const handleUpdateStatus = async (orderId, newStatus) => {
+    try {
+      await updateOrderStatus(orderId, newStatus);
+      setOrders(prev => prev.map(order =>
+        order.orderId === orderId ? { ...order, status: newStatus } : order
+      ));
+      if (selectedOrder && selectedOrder.orderId === orderId) {
+        setSelectedOrder({ ...selectedOrder, status: newStatus });
+      }
+      alert('Cập nhật trạng thái thành công!');
+    } catch (err) {
+      alert('Lỗi khi cập nhật trạng thái đơn hàng!');
     }
   };
 
@@ -285,28 +223,37 @@ const AdminOrders = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {filteredOrders.length > 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan="6" className="px-6 py-20 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <FiLoader size={32} className="animate-spin text-primary" />
+                    <span className="text-sm text-text-gray font-medium">Đang tải đơn hàng...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : filteredOrders.length > 0 ? (
               filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-bg-gray/30 transition-colors group">
+                <tr key={order._id} className="hover:bg-bg-gray/30 transition-colors group">
                   <td className="px-6 py-4">
-                    <span className="text-sm font-bold text-text-dark">#{order.id}</span>
+                    <span className="text-sm font-bold text-text-dark">#{order.orderId}</span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium text-text-dark">{order.customer}</span>
+                      <span className="text-sm font-medium text-text-dark">{order.customerName}</span>
                       <span className="text-xs text-text-gray">{order.phone}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-text-gray">
-                    {formatDate(order.date)}
+                    {formatDate(order.createdAt)}
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm font-bold text-primary">{formatPrice(order.total)}</span>
+                    <span className="text-sm font-bold text-primary">{formatPrice(order.totalAmount)}</span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${statusConfig[order.status]?.color}`}>
                       {statusConfig[order.status]?.icon}
-                      {order.status}
+                      {statusConfig[order.status]?.label}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -336,6 +283,12 @@ const AdminOrders = () => {
         </table>
       </div>
 
+      <Pagination 
+        currentPage={page} 
+        totalPages={totalPages} 
+        onPageChange={(p) => setPage(p)} 
+      />
+
       {/* Order Details Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
@@ -343,8 +296,8 @@ const AdminOrders = () => {
             {/* Modal Header */}
             <div className="px-8 py-6 border-b border-border flex items-center justify-between bg-white sticky top-0 z-10">
               <div>
-                <h2 className="text-xl font-bold text-text-dark">Chi tiết đơn hàng #{selectedOrder.id}</h2>
-                <p className="text-sm text-text-gray mt-0.5">Đặt ngày {formatDate(selectedOrder.date)}</p>
+                <h2 className="text-xl font-bold text-text-dark">Chi tiết đơn hàng #{selectedOrder.orderId}</h2>
+                <p className="text-sm text-text-gray mt-0.5">Đặt ngày {formatDate(selectedOrder.createdAt)}</p>
               </div>
               <button
                 onClick={() => setSelectedOrder(null)}
@@ -366,7 +319,7 @@ const AdminOrders = () => {
                   <div className="space-y-3">
                     <div>
                       <p className="text-[11px] text-text-gray uppercase font-semibold">Tên khách hàng</p>
-                      <p className="text-sm font-medium text-text-dark">{selectedOrder.customer}</p>
+                      <p className="text-sm font-medium text-text-dark">{selectedOrder.customerName}</p>
                     </div>
                     <div>
                       <p className="text-[11px] text-text-gray uppercase font-semibold">Số điện thoại</p>
@@ -388,7 +341,7 @@ const AdminOrders = () => {
                   <div className="space-y-3">
                     <div>
                       <p className="text-[11px] text-text-gray uppercase font-semibold">Địa chỉ nhận hàng</p>
-                      <p className="text-sm font-medium text-text-dark leading-relaxed">{selectedOrder.address}</p>
+                      <p className="text-sm font-medium text-text-dark leading-relaxed">{selectedOrder.shippingAddress}</p>
                     </div>
                     <div>
                       <p className="text-[11px] text-text-gray uppercase font-semibold">Phương thức</p>
@@ -412,7 +365,7 @@ const AdminOrders = () => {
                       <p className="text-[11px] text-text-gray uppercase font-semibold">Trạng thái hiện tại</p>
                       <span className={`inline-flex items-center gap-1.5 mt-1 px-3 py-1 rounded-full text-xs font-semibold ${statusConfig[selectedOrder.status]?.color}`}>
                         {statusConfig[selectedOrder.status]?.icon}
-                        {selectedOrder.status}
+                        {statusConfig[selectedOrder.status]?.label}
                       </span>
                     </div>
                   </div>
@@ -437,7 +390,7 @@ const AdminOrders = () => {
                     </thead>
                     <tbody className="divide-y divide-border">
                       {selectedOrder.items.map((item) => (
-                        <tr key={item.id}>
+                        <tr key={item.productId}>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <img src={item.image} alt={item.name} className="w-12 h-12 rounded-xl object-cover border border-border shadow-sm" />
@@ -445,8 +398,8 @@ const AdminOrders = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4 text-center text-sm text-text-gray">{formatPrice(item.price)}</td>
-                          <td className="px-6 py-4 text-center text-sm font-medium text-text-dark">x{item.qty}</td>
-                          <td className="px-6 py-4 text-right text-sm font-bold text-primary">{formatPrice(item.price * item.qty)}</td>
+                          <td className="px-6 py-4 text-center text-sm font-medium text-text-dark">x{item.quantity}</td>
+                          <td className="px-6 py-4 text-right text-sm font-bold text-primary">{formatPrice(item.price * item.quantity)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -459,19 +412,19 @@ const AdminOrders = () => {
                 <div className="w-full max-w-sm space-y-3 bg-bg-gray/30 p-6 rounded-2xl border border-border">
                   <div className="flex justify-between text-sm">
                     <span className="text-text-gray">Tạm tính:</span>
-                    <span className="font-medium text-text-dark">{formatPrice(selectedOrder.subtotal)}</span>
+                    <span className="font-medium text-text-dark">{formatPrice(selectedOrder.totalAmount)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-text-gray">Phí vận chuyển:</span>
-                    <span className="font-medium text-text-dark">+{formatPrice(selectedOrder.shipping)}</span>
+                    <span className="font-medium text-text-dark">+{formatPrice(0)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-text-gray">Giảm giá:</span>
-                    <span className="font-medium text-accent">-{formatPrice(selectedOrder.discount)}</span>
+                    <span className="font-medium text-accent">-{formatPrice(0)}</span>
                   </div>
                   <div className="pt-3 border-t border-border flex justify-between items-center">
                     <span className="font-bold text-text-dark">Tổng cộng:</span>
-                    <span className="text-xl font-black text-primary">{formatPrice(selectedOrder.total)}</span>
+                    <span className="text-xl font-black text-primary">{formatPrice(selectedOrder.totalAmount)}</span>
                   </div>
                 </div>
               </div>
@@ -482,16 +435,16 @@ const AdminOrders = () => {
               <div className="flex items-center gap-3">
                 <span className="text-sm font-bold text-text-dark">Cập nhật trạng thái:</span>
                 <div className="flex flex-wrap gap-2">
-                  {Object.keys(statusConfig).map((status) => (
+                  {Object.entries(statusConfig).map(([statusKey, config]) => (
                     <button
-                      key={status}
-                      onClick={() => handleUpdateStatus(selectedOrder.id, status)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${selectedOrder.status === status
+                      key={statusKey}
+                      onClick={() => handleUpdateStatus(selectedOrder.orderId, statusKey)}
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${selectedOrder.status === statusKey
                         ? 'bg-primary border-primary text-white shadow-md shadow-primary/20 scale-105'
                         : 'bg-white border-border text-text-gray hover:border-primary hover:text-primary'
                         }`}
                     >
-                      {status}
+                      {config.label}
                     </button>
                   ))}
                 </div>

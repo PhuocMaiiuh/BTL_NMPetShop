@@ -1,13 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff, FiFilter, FiChevronDown, FiChevronRight, FiX, FiUploadCloud, FiRefreshCw } from 'react-icons/fi';
-
-const defaultProducts = [
-  { id: 1, name: 'Hạt Khô Cao Cấp', image: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=80&h=80&fit=crop', category: 'Thức ăn hạt (Sản phẩm cho Chó)', price: 850000, originalPrice: 950000, description: 'Sản phẩm thức ăn hạt cao cấp cho chó lớn.', stock: 24, active: true },
-  { id: 2, name: 'Cần Câu Mèo', image: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=80&h=80&fit=crop', category: 'Cần câu & Bóng (Đồ chơi)', price: 45000, originalPrice: 60000, description: 'Đồ chơi cần câu giúp mèo vận động.', stock: 2, active: true },
-  { id: 3, name: 'Đệm Ngủ Tròn', image: 'https://images.unsplash.com/photo-1535930749574-1399327ce78f?w=80&h=80&fit=crop', category: 'Giường nệm & Chuồng (Phụ kiện)', price: 350000, originalPrice: 400000, description: 'Đệm ngủ êm ái cho thú cưng.', stock: 0, active: false },
-  { id: 4, name: 'Vòng cổ LED phát sáng', image: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=80&h=80&fit=crop', category: 'Vòng cổ & Dây dắt (Phụ kiện)', price: 120000, originalPrice: 150000, description: 'Vòng cổ an toàn khi dắt thú cưng đi dạo ban đêm.', stock: 15, active: true },
-  { id: 5, name: 'Sữa tắm thảo dược', image: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=80&h=80&fit=crop', category: 'Sữa tắm & Vệ sinh (Sản phẩm cho Mèo)', price: 195000, originalPrice: 220000, description: 'Sữa tắm an toàn, không kích ứng da.', stock: 8, active: true },
-];
+import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff, FiFilter, FiChevronDown, FiChevronRight, FiX, FiUploadCloud, FiRefreshCw, FiLoader } from 'react-icons/fi';
+import { fetchProducts, createProduct, updateProduct, deleteProduct, toggleProductStatus } from '../../services/productApi';
+import Pagination from '../../components/admin/Pagination';
 
 const categoryGroups = [
   { label: 'Sản phẩm cho Chó', subs: ['Thức ăn hạt', 'Pate & Đồ hộp', 'Sữa tắm & Vệ sinh'] },
@@ -20,11 +14,8 @@ const categoryGroups = [
 const formatPrice = (p) => new Intl.NumberFormat('vi-VN').format(p) + 'đ';
 
 const AdminProducts = () => {
-  const [products, setProducts] = useState(() => {
-    const saved = localStorage.getItem('nm_petshop_products');
-    return saved ? JSON.parse(saved) : defaultProducts;
-  });
-
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -32,12 +23,17 @@ const AdminProducts = () => {
   const [showCatFilterDropdown, setShowCatFilterDropdown] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
   // Modal State
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
-    name: '', category: '', price: 0, originalPrice: 0, description: '', stock: 0, image: ''
+    name: '', category: '', price: 0, originalPrice: 0, description: '', stock: 0, image: '', images: []
   });
   const [showFormCatDropdown, setShowFormCatDropdown] = useState(false);
 
@@ -45,9 +41,40 @@ const AdminProducts = () => {
   const statusFilterRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  const loadProducts = async (currentPage = page) => {
+    setLoading(true);
+    try {
+      const params = {
+        page: currentPage,
+        limit: 20,
+        search,
+        includeInactive: 'true'
+      };
+      
+      if (categoryFilter !== 'All') {
+        // Extract category name without group
+        params.category = categoryFilter.split(' (')[0];
+      }
+      
+      const data = await fetchProducts(params);
+      setProducts(data.products);
+      setTotalPages(data.totalPages);
+      setTotalItems(data.total);
+    } catch (err) {
+      console.error('Failed to load products:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem('nm_petshop_products', JSON.stringify(products));
-  }, [products]);
+    loadProducts(1);
+    setPage(1);
+  }, [search, categoryFilter, statusFilter]);
+
+  useEffect(() => {
+    loadProducts(page);
+  }, [page]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -58,25 +85,27 @@ const AdminProducts = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const lowStockCount = useMemo(() => products.filter(p => p.stock <= 10).length, [products]);
+  const lowStockCount = 0; // Ideally fetch this from a separate meta endpoint if needed, or stick to current page if acceptable. For now, I'll keep it simple.
 
-  const filteredProducts = useMemo(() => {
-    return products.filter(p => {
-      const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
-      const matchesCategory = categoryFilter === 'All' || p.category === categoryFilter;
-      const matchesStatus = statusFilter === 'All' || (statusFilter === 'Active' ? p.active : !p.active);
-      const matchesLowStock = !lowStockOnly || p.stock <= 10;
-      return matchesSearch && matchesCategory && matchesStatus && matchesLowStock;
-    });
-  }, [search, categoryFilter, statusFilter, lowStockOnly, products]);
+  const filteredProducts = products; // Already filtered by backend
 
-  const handleToggleStatus = (id) => {
-    setProducts(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p));
+  const handleToggleStatus = async (id) => {
+    try {
+      const result = await toggleProductStatus(id);
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, active: result.active } : p));
+    } catch (err) {
+      alert('Không thể cập nhật trạng thái sản phẩm!');
+    }
   };
 
-  const handleDeleteProduct = (id) => {
+  const handleDeleteProduct = async (id) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này không? Thao tác này không thể hoàn tác.')) {
-      setProducts(prev => prev.filter(p => p.id !== id));
+      try {
+        await deleteProduct(id);
+        setProducts(prev => prev.filter(p => p.id !== id));
+      } catch (err) {
+        alert('Lỗi khi xóa sản phẩm!');
+      }
     }
   };
 
@@ -101,7 +130,7 @@ const AdminProducts = () => {
 
   const openAddModal = () => {
     setEditingId(null);
-    setFormData({ name: '', category: '', price: 0, originalPrice: 0, description: '', stock: 0, image: '' });
+    setFormData({ name: '', category: '', price: 0, originalPrice: 0, description: '', stock: 0, image: '', images: [] });
     setShowModal(true);
   };
 
@@ -113,13 +142,14 @@ const AdminProducts = () => {
       price: p.price,
       originalPrice: p.originalPrice || p.price,
       description: p.description || '',
-      stock: p.stock,
-      image: p.image
+      stock: p.stock || p.stockCount || 0,
+      image: p.image,
+      images: p.images || []
     });
     setShowModal(true);
   };
 
-  const handleSaveProduct = (e) => {
+  const handleSaveProduct = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.category || formData.price <= 0 || formData.stock < 0) {
       alert('Vui lòng điền đầy đủ thông tin sản phẩm và giá hợp lệ!');
@@ -127,25 +157,22 @@ const AdminProducts = () => {
     }
 
     setIsSaving(true);
-
-    setTimeout(() => {
+    try {
       if (editingId) {
-        setProducts(prev => prev.map(p => 
-          p.id === editingId ? { ...p, ...formData } : p
-        ));
+        const updated = await updateProduct(editingId, formData);
+        setProducts(prev => prev.map(p => p.id === editingId ? updated : p));
+        alert('Cập nhật sản phẩm thành công!');
       } else {
-        const newProduct = {
-          ...formData,
-          id: products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1,
-          active: true
-        };
-        setProducts(prev => [newProduct, ...prev]);
+        const created = await createProduct(formData);
+        setProducts(prev => [created, ...prev]);
+        alert('Thêm sản phẩm mới thành công!');
       }
-      
-      setIsSaving(false);
       setShowModal(false);
-      alert(editingId ? 'Cập nhật sản phẩm thành công!' : 'Thêm sản phẩm mới thành công!');
-    }, 800);
+    } catch (err) {
+      alert('Lỗi khi lưu sản phẩm: ' + err.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -248,7 +275,16 @@ const AdminProducts = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {filteredProducts.length > 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan="6" className="px-6 py-20 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <FiLoader size={32} className="animate-spin text-primary" />
+                    <span className="text-sm text-text-gray font-medium">Đang tải dữ liệu...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : filteredProducts.length > 0 ? (
               filteredProducts.map((p) => (
                 <tr key={p.id} className="hover:bg-bg-gray/30 transition-colors group">
                   <td className="px-6 py-4">
@@ -298,6 +334,12 @@ const AdminProducts = () => {
           </tbody>
         </table>
       </div>
+
+      <Pagination 
+        currentPage={page} 
+        totalPages={totalPages} 
+        onPageChange={(p) => setPage(p)} 
+      />
 
       {/* Product Modal */}
       {showModal && (

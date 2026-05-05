@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # =============================================
+  # MongoDB Service
+  # =============================================
+  mongodb:
+    image: mongo:7.0
+    container_name: nmpetshop_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: nmpetshop
+    volumes:
+      - mongodb_data:/data/db
+      # Mount init scripts (runs on first start only)
+      - ./mongo-init:/docker-entrypoint-initdb.d:ro
+      # Mount JSON data file so init script can access it
+      - ./NMPetShop/src/data/petmall_products.json:/data/seed/petmall_products.json:ro
+    networks:
+      - petshop_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "--username", "admin", "--password", "admin123", "--authenticationDatabase", "admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # =============================================
+  # Mongo Express - Web UI
+  # =============================================
+  mongo-express:
+    image: mongo-express:1.0.2
+    container_name: nmpetshop_mongo_express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin123
+      ME_CONFIG_MONGODB_URL: mongodb://admin:admin123@mongodb:27017/
+      ME_CONFIG_BASICAUTH: "false"
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - petshop_network
+
+# =============================================
+# Volumes & Networks
+# =============================================
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  petshop_network:
+    driver: bridge

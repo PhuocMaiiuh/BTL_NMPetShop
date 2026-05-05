@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
+import { ToastProvider } from './contexts/ToastContext';
+import Toast from './components/Toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
 import AdminLayout from './layouts/AdminLayout';
@@ -14,6 +16,8 @@ import CheckoutPage from './pages/CheckoutPage';
 import ProfilePage from './pages/ProfilePage';
 import AuthPage from './pages/AuthPage';
 import OrderDetailPage from './pages/OrderDetailPage';
+import InfoPage from './pages/InfoPage';
+import ScrollToTopButton from './components/ScrollToTopButton';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
@@ -27,6 +31,9 @@ function App() {
       <ScrollToTop />
       <AuthProvider>
         <CartProvider>
+          <ToastProvider>
+          <Toast />
+          <ScrollToTopButton />
           <Routes>
           {/* Customer-facing pages */}
           <Route element={<MainLayout />}>
@@ -53,6 +60,10 @@ function App() {
                 <OrderDetailPage />
               </ProtectedRoute>
             } />
+            <Route path="/ve-chung-toi" element={<InfoPage />} />
+            <Route path="/lien-he" element={<InfoPage />} />
+            <Route path="/chinh-sach" element={<InfoPage />} />
+            <Route path="/huong-dan-thanh-toan" element={<InfoPage />} />
           </Route>
 
           {/* Auth pages */}
@@ -75,6 +86,7 @@ function App() {
             <Route path="/admin/khach-hang" element={<AdminCustomers />} />
           </Route>
           </Routes>
+          </ToastProvider>
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>

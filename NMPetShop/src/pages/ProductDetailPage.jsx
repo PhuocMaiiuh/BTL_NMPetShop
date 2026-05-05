@@ -6,6 +6,7 @@ import ProductCard from '../components/ProductCard';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchProductById, fetchProducts } from '../services/productApi';
+import { useToast } from '../contexts/ToastContext';
 
 const formatPrice = (p) => new Intl.NumberFormat('vi-VN').format(p) + 'đ';
 
@@ -18,8 +19,10 @@ const ProductDetailPage = () => {
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
   const { addToCart } = useCart();
   const { isAuthenticated } = useAuth();
+  const { addToast } = useToast();
 
   useEffect(() => {
     const loadProductData = async () => {
@@ -36,7 +39,7 @@ const ProductDetailPage = () => {
           limit: 4
         });
         // Filter out the current product from related products
-        setRelatedProducts(relatedData.products.filter(p => p.id !== data.id));
+        setRelatedProducts(relatedData.products.filter(p => (p._id || p.id) !== (data._id || data.id)));
       } catch (err) {
         setError(err.message);
       } finally {
@@ -54,6 +57,33 @@ const ProductDetailPage = () => {
       return;
     }
     addToCart(product, quantity);
+    addToast(`Đã thêm ${quantity} "${product.name}" vào giỏ hàng!`, 'success');
+  };
+
+  const handleToggleFavorite = () => {
+    const newState = !isFavorite;
+    setIsFavorite(newState);
+    addToast(
+      newState ? 'Đã thêm vào danh sách yêu thích ❤️' : 'Đã xóa khỏi danh sách yêu thích',
+      newState ? 'success' : 'info'
+    );
+  };
+
+  const handleDecQty = () => {
+    if (quantity > 1) setQuantity(quantity - 1);
+  };
+
+  const handleIncQty = () => {
+    const stock = product.stockCount || product.stock || 0;
+    if (quantity >= stock) {
+      addToast(`Chỉ còn ${stock} sản phẩm trong kho`, 'warning');
+      return;
+    }
+    if (quantity >= 99) {
+      addToast('Số lượng tối đa là 99', 'warning');
+      return;
+    }
+    setQuantity(quantity + 1);
   };
 
   const getCategoryInfo = (category) => {
@@ -88,6 +118,8 @@ const ProductDetailPage = () => {
   }
 
   const categoryInfo = getCategoryInfo(product.category);
+  const images = product.images && product.images.length > 0 ? product.images : [product.image];
+  const currentImage = images[selectedImage];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -103,20 +135,21 @@ const ProductDetailPage = () => {
         {/* Images */}
         <div>
           <div className="bg-bg-gray rounded-2xl overflow-hidden mb-4 aspect-square">
-            <img 
-              src={product.images && product.images.length > 0 ? product.images[selectedImage] : product.image} 
-              alt={product.name} 
-              className="w-full h-full object-contain" 
+            <img
+              src={currentImage}
+              alt={product.name}
+              className="w-full h-full object-contain transition-opacity duration-200"
+              key={selectedImage}
             />
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-            {(product.images || [product.image]).map((img, i) => (
-              <button 
-                key={i} 
-                onClick={() => setSelectedImage(i)} 
-                className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${selectedImage === i ? 'border-primary' : 'border-transparent'}`}
+            {images.map((img, i) => (
+              <button
+                key={i}
+                onClick={() => setSelectedImage(i)}
+                className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === i ? 'border-primary shadow-md scale-105' : 'border-transparent hover:border-primary/40'}`}
               >
-                <img src={img} alt="" className="w-full h-full object-cover" />
+                <img src={img} alt="" className="w-full h-full object-cover"/>
               </button>
             ))}
           </div>
@@ -162,35 +195,34 @@ const ProductDetailPage = () => {
           {/* Quantity + Actions */}
           <div className="flex items-center gap-4 mb-6">
             <div className="flex items-center border border-border rounded-lg">
-              <button 
-                onClick={() => setQuantity(Math.max(1, quantity - 1))} 
-                className="p-3 hover:bg-bg-gray transition-colors"
-                disabled={!product.inStock}
+              <button
+                onClick={handleDecQty}
+                disabled={!product.inStock || quantity <= 1}
+                className="p-3 hover:bg-bg-gray transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <FiMinus size={16} />
+                <FiMinus size={16}/>
               </button>
               <span className="w-12 text-center font-medium">{quantity}</span>
-              <button 
-                onClick={() => setQuantity(Math.min(product.stockCount || product.stock || 10, quantity + 1))} 
-                className="p-3 hover:bg-bg-gray transition-colors"
-                disabled={!product.inStock}
+              <button
+                onClick={handleIncQty}
+                disabled={!product.inStock || quantity >= Math.min(product.stockCount || product.stock || 0, 99)}
+                className="p-3 hover:bg-bg-gray transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <FiPlus size={16} />
+                <FiPlus size={16}/>
               </button>
             </div>
             <button
               onClick={handleAddToCart}
               disabled={!product.inStock}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 font-semibold rounded-lg transition-colors ${
-                product.inStock 
-                  ? 'bg-primary hover:bg-primary-light text-white' 
-                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              }`}
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary hover:bg-primary-light disabled:bg-gray-300 text-white font-semibold rounded-lg transition-colors"
             >
-              <FiShoppingCart size={18} /> {product.inStock ? 'Thêm vào giỏ hàng' : 'Hết hàng'}
+              <FiShoppingCart size={18}/> {product.inStock ? 'Thêm vào giỏ hàng' : 'Hết hàng'}
             </button>
-            <button className="p-3 border border-border rounded-lg hover:border-accent hover:text-accent transition-colors">
-              <FiHeart size={18} />
+            <button
+              onClick={handleToggleFavorite}
+              className={`p-3 border rounded-lg transition-all ${isFavorite ? 'border-red-400 bg-red-50 text-red-500' : 'border-border hover:border-accent hover:text-accent'}`}
+            >
+              <FiHeart size={18} className={isFavorite ? 'fill-current' : ''}/>
             </button>
           </div>
           
@@ -202,7 +234,7 @@ const ProductDetailPage = () => {
                 </div>
                 <div>
                   <p className="text-xs text-text-light uppercase font-bold mb-1">SKU</p>
-                  <p className="text-sm font-medium text-text-dark">NM-{product.id}</p>
+                  <p className="text-sm font-medium text-text-dark">NM-{product.id || product._id}</p>
                 </div>
              </div>
           </div>

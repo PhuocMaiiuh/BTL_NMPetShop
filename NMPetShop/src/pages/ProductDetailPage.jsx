@@ -5,6 +5,7 @@ import { FiShoppingCart, FiHeart, FiMinus, FiPlus } from 'react-icons/fi';
 import ProductCard from '../components/ProductCard';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 
 const product = {
   id: 1,
@@ -45,8 +46,12 @@ const ProductDetailPage = () => {
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
   const { addToCart } = useCart();
   const { isAuthenticated } = useAuth();
+  const { addToast } = useToast();
+
+  const currentImage = product.images[selectedImage] || product.image;
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
@@ -54,6 +59,31 @@ const ProductDetailPage = () => {
       return;
     }
     addToCart(product, quantity);
+    addToast(`Đã thêm ${quantity} "${product.name}" vào giỏ hàng!`, 'success');
+  };
+
+  const handleToggleFavorite = () => {
+    setIsFavorite(!isFavorite);
+    addToast(
+      isFavorite ? 'Đã xóa khỏi danh sách yêu thích' : 'Đã thêm vào danh sách yêu thích ❤️',
+      isFavorite ? 'info' : 'success'
+    );
+  };
+
+  const handleDecQty = () => {
+    if (quantity > 1) setQuantity(quantity - 1);
+  };
+
+  const handleIncQty = () => {
+    if (quantity >= product.stockCount) {
+      addToast(`Chỉ còn ${product.stockCount} sản phẩm trong kho`, 'warning');
+      return;
+    }
+    if (quantity >= 99) {
+      addToast('Số lượng tối đa là 99', 'warning');
+      return;
+    }
+    setQuantity(quantity + 1);
   };
 
   const getCategoryInfo = (category) => {
@@ -82,12 +112,21 @@ const ProductDetailPage = () => {
         {/* Images */}
         <div>
           <div className="bg-bg-gray rounded-2xl overflow-hidden mb-4 aspect-square">
-            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+            <img
+              src={currentImage}
+              alt={product.name}
+              className="w-full h-full object-cover transition-opacity duration-200"
+              key={selectedImage}
+            />
           </div>
           <div className="flex gap-3">
             {product.images.map((img, i) => (
-              <button key={i} onClick={() => setSelectedImage(i)} className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${selectedImage === i ? 'border-primary' : 'border-transparent'}`}>
-                <img src={img} alt="" className="w-full h-full object-cover" />
+              <button
+                key={i}
+                onClick={() => setSelectedImage(i)}
+                className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === i ? 'border-primary shadow-md scale-105' : 'border-transparent hover:border-primary/40'}`}
+              >
+                <img src={img} alt="" className="w-full h-full object-cover"/>
               </button>
             ))}
           </div>
@@ -99,7 +138,7 @@ const ProductDetailPage = () => {
           <h1 className="text-2xl font-bold text-text-dark mt-3 mb-3">{product.name}</h1>
           <div className="flex items-center gap-3 mb-4">
             <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => <FaStar key={i} size={14} className={i < Math.floor(product.rating) ? 'text-secondary' : 'text-gray-200'} />)}
+              {[...Array(5)].map((_, i) => <FaStar key={i} size={14} className={i < Math.floor(product.rating) ? 'text-secondary' : 'text-gray-200'}/>)}
             </div>
             <span className="text-sm text-text-gray">({product.reviews} đánh giá)</span>
             <span className={`text-sm font-medium ${product.inStock ? 'text-accent-green' : 'text-accent'}`}>
@@ -127,18 +166,34 @@ const ProductDetailPage = () => {
           {/* Quantity + Actions */}
           <div className="flex items-center gap-4 mb-6">
             <div className="flex items-center border border-border rounded-lg">
-              <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-3 hover:bg-bg-gray transition-colors"><FiMinus size={16} /></button>
+              <button
+                onClick={handleDecQty}
+                disabled={quantity <= 1}
+                className="p-3 hover:bg-bg-gray transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <FiMinus size={16}/>
+              </button>
               <span className="w-12 text-center font-medium">{quantity}</span>
-              <button onClick={() => setQuantity(quantity + 1)} className="p-3 hover:bg-bg-gray transition-colors"><FiPlus size={16} /></button>
+              <button
+                onClick={handleIncQty}
+                disabled={quantity >= Math.min(product.stockCount, 99)}
+                className="p-3 hover:bg-bg-gray transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <FiPlus size={16}/>
+              </button>
             </div>
             <button
               onClick={handleAddToCart}
-              className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-colors"
+              disabled={!product.inStock}
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary hover:bg-primary-light disabled:bg-gray-300 text-white font-semibold rounded-lg transition-colors"
             >
-              <FiShoppingCart size={18} /> Thêm vào giỏ hàng
+              <FiShoppingCart size={18}/> Thêm vào giỏ hàng
             </button>
-            <button className="p-3 border border-border rounded-lg hover:border-accent hover:text-accent transition-colors">
-              <FiHeart size={18} />
+            <button
+              onClick={handleToggleFavorite}
+              className={`p-3 border rounded-lg transition-all ${isFavorite ? 'border-red-400 bg-red-50 text-red-500' : 'border-border hover:border-accent hover:text-accent'}`}
+            >
+              <FiHeart size={18} className={isFavorite ? 'fill-current' : ''}/>
             </button>
           </div>
         </div>
@@ -148,7 +203,7 @@ const ProductDetailPage = () => {
       <section>
         <h2 className="text-xl font-bold text-text-dark mb-6">Sản phẩm liên quan</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {relatedProducts.map((p) => <ProductCard key={p.id} product={p} />)}
+          {relatedProducts.map((p) => <ProductCard key={p.id} product={p}/>)}
         </div>
       </section>
     </div>

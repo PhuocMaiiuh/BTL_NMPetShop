@@ -1,81 +1,145 @@
 import { Link } from 'react-router-dom';
+import { FiArrowRight } from 'react-icons/fi';
+import { FaPaw } from 'react-icons/fa';
 
 const combos = [
   {
     id: 1,
     title: 'Combo Răng Miệng',
-    desc: 'Giảm 20% bộ bàn chải & nước súc miệng.',
+    desc: 'Giảm 20% bộ bàn chải & nước súc miệng cho bé.',
     image: '/Combo.png',
-    color: 'from-emerald-600 to-emerald-400',
-    path: '/san-pham'
+    gradient: 'from-emerald-600 to-teal-400',
+    glow: 'rgba(16,185,129,0.35)',
+    badge: 'SALE 20%',
+    badgeColor: 'bg-emerald-400',
+    path: '/san-pham',
   },
   {
     id: 2,
     title: 'Combo Ăn Ngon',
-    desc: 'Tặng ngay bát ăn khi mua 2 bao hạt.',
+    desc: 'Tặng ngay bát ăn khi mua 2 bao hạt cao cấp.',
     image: '/Combo.png',
-    color: 'from-orange-500 to-amber-400',
-    path: '/san-pham'
+    gradient: 'from-orange-500 to-amber-400',
+    glow: 'rgba(249,115,22,0.35)',
+    badge: 'HOT DEAL',
+    badgeColor: 'bg-orange-400',
+    path: '/san-pham',
   },
   {
     id: 3,
     title: 'Combo Spa Tẩy Tế',
-    desc: 'Sữa tắm & Lược chải lông cao cấp.',
+    desc: 'Sữa tắm & Lược chải lông cao cấp siêu mịn.',
     image: '/Combo.png',
-    color: 'from-blue-600 to-cyan-400',
-    path: '/san-pham'
+    gradient: 'from-blue-600 to-cyan-400',
+    glow: 'rgba(59,130,246,0.35)',
+    badge: 'MỚI',
+    badgeColor: 'bg-blue-400',
+    path: '/san-pham',
   },
   {
     id: 4,
     title: 'Combo Vui Chơi',
     desc: 'Mua 3 tặng 1 các loại đồ chơi dây thừng.',
     image: '/Combo.png',
-    color: 'from-purple-600 to-pink-400',
-    path: '/san-pham'
-  }
+    gradient: 'from-purple-600 to-pink-400',
+    glow: 'rgba(168,85,247,0.35)',
+    badge: 'TẶNG 1',
+    badgeColor: 'bg-purple-400',
+    path: '/san-pham',
+  },
 ];
 
 const PromoBanner = () => {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <h2 className="text-2xl font-bold text-text-dark mb-8">Top 4 các combo siêu hời</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {combos.map((combo) => (
-          <div 
-            key={combo.id}
-            className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${combo.color} transition-all duration-300 hover:shadow-xl hover:-translate-y-1`}
+    <section className="py-16 relative" style={{ background: 'transparent' }}>
+      <FaPaw className="absolute top-[30%] left-[6%] text-[#a8c5ff]/10 animate-float pointer-events-none" size={24} style={{ animationDelay: '0.8s', animationDuration: '4.8s' }} />
+      <FaPaw className="absolute bottom-[25%] right-[5%] text-[#e85a2b]/10 animate-float pointer-events-none" size={28} style={{ animationDelay: '1.5s', animationDuration: '3.5s' }} />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Section header */}
+        <div className="text-center mb-12">
+          <div
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-4"
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              color: 'rgba(255,255,255,0.6)',
+              border: '1px solid rgba(255,255,255,0.1)',
+            }}
           >
-            <div className="flex flex-col h-full">
-              {/* Text Part */}
-              <div className="p-5 flex-1">
-                <h3 className="text-lg font-bold text-white mb-2 leading-tight">
-                  {combo.title}
-                </h3>
-                <p className="text-white/80 text-xs mb-4 line-clamp-2">
-                  {combo.desc}
-                </p>
+            🔥 ƯU ĐÃI ĐẶC BIỆT
+          </div>
+          <h2 className="text-3xl font-black text-white mb-3">
+            Top 4 Combo{' '}
+            <span className="hero-gradient-text-orange">
+              Siêu Hời
+            </span>
+          </h2>
+          <p className="text-white/50 text-sm max-w-md mx-auto">
+            Tiết kiệm hơn khi mua theo combo — chỉ có tại NM Pet Shop!
+          </p>
+        </div>
+
+        {/* Combo Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {combos.map((combo) => (
+            <div
+              key={combo.id}
+              className={`group relative rounded-3xl overflow-hidden bg-gradient-to-br ${combo.gradient} shimmer-card promo-card-glow transition-all duration-400 cursor-pointer`}
+              style={{ boxShadow: `0 8px 32px ${combo.glow}` }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
+                e.currentTarget.style.boxShadow = `0 24px 60px ${combo.glow}`;
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                e.currentTarget.style.boxShadow = `0 8px 32px ${combo.glow}`;
+              }}
+            >
+              {/* Badge */}
+              <div className={`absolute top-4 right-4 z-10 ${combo.badgeColor} text-white text-xs font-black px-3 py-1 rounded-full shadow-lg`}>
+                {combo.badge}
+              </div>
+
+              {/* Content */}
+              <div className="p-6 pb-4">
+                <h3 className="text-lg font-black text-white mb-2 leading-tight drop-shadow">{combo.title}</h3>
+                <p className="text-white/75 text-xs leading-relaxed mb-5">{combo.desc}</p>
                 <Link
                   to={combo.path}
-                  className="inline-flex items-center text-xs font-semibold text-white group/btn"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-white group/btn"
                 >
                   Mua ngay
-                  <svg className="w-3 h-3 ml-1 transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <FiArrowRight
+                    size={12}
+                    className="transition-transform duration-200 group-hover/btn:translate-x-1.5"
+                  />
                 </Link>
               </div>
 
-              {/* Image Part */}
-              <div className="h-28 relative overflow-hidden flex items-center justify-center p-2 bg-white/10">
+              {/* Image */}
+              <div className="h-32 relative overflow-hidden">
+                <div
+                  className="absolute inset-0"
+                  style={{ background: 'rgba(0,0,0,0.15)' }}
+                />
                 <img
                   src={combo.image}
                   alt={combo.title}
-                  className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                  className="w-full h-full object-contain p-3 group-hover:scale-115 transition-transform duration-500"
+                  onError={e => { e.target.style.display = 'none'; }}
                 />
               </div>
+
+              {/* Bottom shine effect */}
+              <div
+                className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
+                style={{
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.2), transparent)',
+                }}
+              />
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );

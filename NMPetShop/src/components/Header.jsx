@@ -235,11 +235,11 @@ const Header = () => {
                   onClick={() => setShowDropdown(!showDropdown)}
                   className="flex items-center gap-1.5 p-1 rounded-full hover:bg-bg-gray transition-colors ml-2"
                 >
-                  {user.avatar ? (
-                    <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover border-2 border-primary/20"/>
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt={user.name || 'User'} className="w-8 h-8 rounded-full object-cover border-2 border-primary/20"/>
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm border-2 border-primary/20">
-                      {user.name.charAt(0).toUpperCase()}
+                      {(user?.name || 'U').charAt(0).toUpperCase()}
                     </div>
                   )}
                   <FiChevronDown size={14} className={`text-text-gray transition-transform ${showDropdown ? 'rotate-180' : ''}`}/>
@@ -248,7 +248,7 @@ const Header = () => {
                 {showDropdown && (
                   <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-border py-2 z-50">
                     <div className="px-4 py-2 border-b border-border">
-                      <p className="text-sm font-semibold text-text-dark truncate">{user.name}</p>
+                      <p className="text-sm font-semibold text-text-dark truncate">{user?.name || 'Người dùng'}</p>
                       <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${isAdmin ? 'bg-danger/10 text-danger' : 'bg-primary/10 text-primary'}`}>
                         {isAdmin ? 'Admin' : (user.customerCode || 'KH26001')}
                       </span>

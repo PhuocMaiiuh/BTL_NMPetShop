@@ -35,9 +35,9 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-border/50">
+    <div className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-border/50 flex flex-col h-full">
       {/* Image */}
-      <div className="relative overflow-hidden aspect-square bg-bg-gray">
+      <div className="relative overflow-hidden aspect-square bg-bg-gray flex-shrink-0">
         <Link to={`/san-pham/${id}`}>
           <img
             src={image}
@@ -55,10 +55,10 @@ const ProductCard = ({ product }) => {
       </div>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="p-4 flex flex-col flex-1">
         <p className="text-xs text-text-light mb-1">{category}</p>
         <Link to={`/san-pham/${id}`}>
-          <h3 className="font-medium text-sm text-text-dark mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+          <h3 className="font-medium text-sm text-text-dark mb-2 line-clamp-2 group-hover:text-primary transition-colors min-h-[40px]">
             {name}
           </h3>
         </Link>
@@ -75,8 +75,8 @@ const ProductCard = ({ product }) => {
           <span className="text-xs text-text-light ml-1">({reviews})</span>
         </div>
 
-        {/* Price + Cart */}
-        <div className="flex items-center justify-between">
+        {/* Price + Cart - Pushed to bottom */}
+        <div className="flex items-center justify-between mt-auto">
           <div className="flex items-center gap-2">
             <span className="text-base font-bold text-primary">{formatPrice(price)}</span>
             {originalPrice && (

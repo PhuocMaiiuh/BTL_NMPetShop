@@ -4,11 +4,11 @@ import { fetchProducts, createProduct, updateProduct, deleteProduct, toggleProdu
 import Pagination from '../../components/admin/Pagination';
 
 const categoryGroups = [
-  { label: 'Sản phẩm cho Chó', subs: ['Thức ăn hạt', 'Pate & Đồ hộp', 'Sữa tắm & Vệ sinh'] },
-  { label: 'Sản phẩm cho Mèo', subs: ['Thức ăn hạt', 'Pate & Đồ hộp', 'Sữa tắm & Vệ sinh'] },
-  { label: 'Phụ kiện', subs: ['Phụ kiện cho chó', 'Phụ kiện cho mèo', 'Vòng cổ & Dây dắt', 'Bát ăn & Bình nước', 'Giường nệm & Chuồng'] },
-  { label: 'Đồ chơi', subs: ['Đồ chơi cho chó', 'Đồ chơi cho mèo', 'Đồ chơi nhai gặm', 'Cần câu & Bóng', 'Bàn cào móng'] },
-  { label: 'Chăm sóc sức khỏe', subs: ['Chăm sóc cho chó', 'Chăm sóc cho mèo', 'Thuốc & Vitamin', 'Dụng cụ cắt tỉa'] },
+  { label: 'Sản phẩm cho Chó', suffix: '(Sản phẩm cho Chó)', subs: ['Thức ăn hạt (Sản phẩm cho Chó)', 'Pate & Đồ hộp (Sản phẩm cho Chó)', 'Sữa tắm & Vệ sinh (Sản phẩm cho Chó)', 'Phụ kiện (Sản phẩm cho Chó)', 'Đồ chơi (Sản phẩm cho Chó)', 'Chăm sóc khác (Sản phẩm cho Chó)'] },
+  { label: 'Sản phẩm cho Mèo', suffix: '(Sản phẩm cho Mèo)', subs: ['Thức ăn hạt (Sản phẩm cho Mèo)', 'Pate & Đồ hộp (Sản phẩm cho Mèo)', 'Sữa tắm & Vệ sinh (Sản phẩm cho Mèo)', 'Phụ kiện (Sản phẩm cho Mèo)', 'Đồ chơi (Sản phẩm cho Mèo)', 'Chăm sóc khác (Sản phẩm cho Mèo)'] },
+  { label: 'Phụ kiện', suffix: '(Phụ kiện)', subs: ['Vòng cổ & Dây dắt (Phụ kiện)', 'Bát ăn & Bình nước (Phụ kiện)', 'Giường nệm & Chuồng (Phụ kiện)', 'Túi vận chuyển & Lồng (Phụ kiện)', 'Phụ kiện chung (Phụ kiện)'] },
+  { label: 'Đồ chơi', suffix: '(Đồ chơi)', subs: ['Đồ chơi nhai gặm (Đồ chơi)', 'Cần câu & Bóng (Đồ chơi)', 'Bàn cào móng (Đồ chơi)', 'Đồ chơi chung (Đồ chơi)'] },
+  { label: 'Chăm sóc sức khỏe', suffix: '(Chăm sóc sức khỏe)', subs: ['Thuốc & Vitamin (Chăm sóc sức khỏe)', 'Dụng cụ cắt tỉa (Chăm sóc sức khỏe)', 'Vệ sinh & Khử mùi (Chăm sóc sức khỏe)', 'Chăm sóc & Y tế (Chăm sóc sức khỏe)'] },
 ];
 
 const formatPrice = (p) => new Intl.NumberFormat('vi-VN').format(p) + 'đ';
@@ -50,12 +50,11 @@ const AdminProducts = () => {
         search,
         includeInactive: 'true'
       };
-      
+
       if (categoryFilter !== 'All') {
-        // Extract category name without group
-        params.category = categoryFilter.split(' (')[0];
+        params.category = categoryFilter;
       }
-      
+
       const data = await fetchProducts(params);
       setProducts(data.products);
       setTotalPages(data.totalPages);
@@ -85,9 +84,13 @@ const AdminProducts = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const lowStockCount = 0; // Ideally fetch this from a separate meta endpoint if needed, or stick to current page if acceptable. For now, I'll keep it simple.
+  const lowStockCount = useMemo(() => products.filter(p => p.stock <= 5).length, [products]);
 
-  const filteredProducts = products; // Already filtered by backend
+  const filteredProducts = useMemo(() => {
+    let result = products;
+    if (lowStockOnly) result = result.filter(p => p.stock <= 5);
+    return result;
+  }, [products, lowStockOnly]);
 
   const handleToggleStatus = async (id) => {
     try {
@@ -177,88 +180,96 @@ const AdminProducts = () => {
 
   return (
     <div className="relative pb-10">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-text-dark">Sản phẩm</h1>
-          <p className="text-sm text-text-gray mt-1">Quản lý kho hàng và danh mục sản phẩm của bạn.</p>
-        </div>
-        <button
-          onClick={openAddModal}
-          className="flex items-center gap-2 px-5 py-2.5 bg-secondary hover:bg-secondary-light text-white font-semibold rounded-xl shadow-lg shadow-secondary/20 transition-all text-sm"
-        >
-          <FiPlus size={16} /> Thêm sản phẩm mới
-        </button>
-      </div>
-
-      {/* Filters Bar */}
-      <div className="flex items-center gap-3 mb-6 h-12">
-        <div className="flex-1 relative h-full">
-          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" size={16} />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-full pl-10 pr-4 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all bg-white"
-            placeholder="Tìm kiếm tên sản phẩm..."
-          />
-        </div>
-
-        <div className="relative flex-shrink-0 h-full" ref={catFilterRef}>
-          <div
-            className={`w-[240px] h-full px-4 border rounded-xl text-sm font-medium transition-all cursor-pointer flex items-center justify-between ${categoryFilter !== 'All' ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-white border-[#e2e8f0] text-[#64748b] hover:border-primary'}`}
-            onClick={() => setShowCatFilterDropdown(!showCatFilterDropdown)}
-          >
-            <div className="flex items-center gap-2 overflow-hidden">
-              <FiFilter size={16} className="flex-shrink-0" />
-              <span className="truncate">{categoryFilter === 'All' ? 'Tất cả danh mục' : categoryFilter}</span>
-            </div>
-            <FiChevronDown size={16} className={`flex-shrink-0 transition-transform ${showCatFilterDropdown ? 'rotate-180' : ''}`} />
+      <div className="sticky top-[-2rem] z-20 bg-admin-bg -mx-8 px-8 pt-8 pb-6 mb-2">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-text-dark">Sản phẩm</h1>
+            <p className="text-sm text-text-gray mt-1">Quản lý kho hàng và danh mục sản phẩm của bạn.</p>
           </div>
-          {showCatFilterDropdown && (
-            <div className="absolute left-0 mt-2 w-[280px] bg-white rounded-2xl shadow-xl border border-[#f1f5f9] py-3 z-[100] animate-fade-in">
-              <div
-                className="px-6 py-2.5 text-sm text-[#475569] hover:text-primary hover:bg-[#f8fafc] cursor-pointer transition-colors font-semibold border-b border-[#f1f5f9] mb-1"
-                onClick={() => { setCategoryFilter('All'); setShowCatFilterDropdown(false); }}
-              >
-                Tất cả danh mục
+          <button
+            onClick={openAddModal}
+            className="flex items-center gap-2 px-5 py-2.5 bg-secondary hover:bg-secondary-light text-white font-semibold rounded-xl shadow-lg shadow-secondary/20 transition-all text-sm"
+          >
+            <FiPlus size={16} /> Thêm sản phẩm mới
+          </button>
+        </div>
+
+        {/* Filters Bar */}
+        <div className="flex items-center gap-3 h-12">
+          <div className="flex-1 relative h-full">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" size={16} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full h-full pl-10 pr-4 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all bg-white"
+              placeholder="Tìm kiếm tên sản phẩm..."
+            />
+          </div>
+
+          <div className="relative flex-shrink-0 h-full" ref={catFilterRef}>
+            <div
+              className={`w-[240px] h-full px-4 border rounded-xl text-sm font-medium transition-all cursor-pointer flex items-center justify-between ${categoryFilter !== 'All' ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-white border-[#e2e8f0] text-[#64748b] hover:border-primary'}`}
+              onClick={() => setShowCatFilterDropdown(!showCatFilterDropdown)}
+            >
+              <div className="flex items-center gap-2 overflow-hidden">
+                <FiFilter size={16} className="flex-shrink-0" />
+                <span className="truncate">
+                  {categoryFilter === 'All' ? 'Tất cả danh mục' : 
+                   categoryGroups.find(c => c.suffix === categoryFilter)?.label || categoryFilter.split(' (')[0]}
+                </span>
               </div>
-              {categoryGroups.map((cat) => (
-                <div key={cat.label} className="relative group/cat px-2">
-                  <div className="flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-[#f8fafc] hover:text-primary transition-colors cursor-default text-sm font-medium text-[#475569]">
-                    <span className="truncate">{cat.label}</span>
-                    <FiChevronRight size={14} className="text-[#94a3b8] flex-shrink-0" />
-                  </div>
-                  <div className="absolute left-[98%] top-0 min-w-[220px] bg-white rounded-2xl shadow-xl border border-[#f1f5f9] py-3 opacity-0 invisible group-hover/cat:opacity-100 group-hover/cat:visible transition-all duration-200 z-[110]">
-                    {cat.subs.map((sub) => (
-                      <div
-                        key={sub}
-                        onClick={() => { setCategoryFilter(`${sub} (${cat.label})`); setShowCatFilterDropdown(false); }}
-                        className="px-6 py-2 text-sm text-[#64748b] hover:text-primary hover:bg-[#f8fafc] cursor-pointer transition-colors"
-                      >
-                        {sub}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+              <FiChevronDown size={16} className={`flex-shrink-0 transition-transform ${showCatFilterDropdown ? 'rotate-180' : ''}`} />
             </div>
+            {showCatFilterDropdown && (
+              <div className="absolute left-0 mt-2 w-[280px] bg-white rounded-2xl shadow-xl border border-[#f1f5f9] py-3 z-[100] animate-fade-in">
+                <div
+                  className="px-6 py-2.5 text-sm text-[#475569] hover:text-primary hover:bg-[#f8fafc] cursor-pointer transition-colors font-semibold border-b border-[#f1f5f9] mb-1"
+                  onClick={() => { setCategoryFilter('All'); setShowCatFilterDropdown(false); }}
+                >
+                  Tất cả danh mục
+                </div>
+                {categoryGroups.map((cat) => (
+                  <div key={cat.label} className="relative group/cat px-2">
+                    <div 
+                      className="flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-[#f8fafc] hover:text-primary transition-colors cursor-pointer text-sm font-medium text-[#475569]"
+                      onClick={() => { setCategoryFilter(cat.suffix); setShowCatFilterDropdown(false); }}
+                    >
+                      <span className="truncate">{cat.label}</span>
+                      <FiChevronRight size={14} className="text-[#94a3b8] flex-shrink-0" />
+                    </div>
+                    <div className="absolute left-[98%] top-0 min-w-[220px] bg-white rounded-2xl shadow-xl border border-[#f1f5f9] py-3 opacity-0 invisible group-hover/cat:opacity-100 group-hover/cat:visible transition-all duration-200 z-[110]">
+                      {cat.subs.map((sub) => (
+                        <div
+                          key={sub}
+                          onClick={(e) => { e.stopPropagation(); setCategoryFilter(sub); setShowCatFilterDropdown(false); }}
+                          className="px-6 py-2 text-sm text-[#64748b] hover:text-primary hover:bg-[#f8fafc] cursor-pointer transition-colors"
+                        >
+                          {sub.split(' (')[0]}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => setLowStockOnly(!lowStockOnly)}
+            className={`h-full px-4 rounded-xl text-sm font-semibold transition-all w-[170px] flex-shrink-0 flex items-center justify-center gap-2 ${lowStockOnly ? 'bg-secondary text-white shadow-lg shadow-secondary/20' : 'bg-white text-[#64748b] border border-[#e2e8f0] hover:border-secondary hover:text-secondary'}`}
+          >
+            Sắp hết hàng ({lowStockCount})
+          </button>
+
+          {(search || categoryFilter !== 'All' || statusFilter !== 'All' || lowStockOnly) && (
+            <button
+              onClick={() => { setSearch(''); setCategoryFilter('All'); setStatusFilter('All'); setLowStockOnly(false); }}
+              className="text-xs font-bold text-accent hover:text-accent-dark transition-colors px-2 whitespace-nowrap"
+            >
+              Xóa bộ lọc
+            </button>
           )}
         </div>
-
-        <button
-          onClick={() => setLowStockOnly(!lowStockOnly)}
-          className={`h-full px-4 rounded-xl text-sm font-semibold transition-all w-[170px] flex-shrink-0 flex items-center justify-center gap-2 ${lowStockOnly ? 'bg-secondary text-white shadow-lg shadow-secondary/20' : 'bg-white text-[#64748b] border border-[#e2e8f0] hover:border-secondary hover:text-secondary'}`}
-        >
-          Sắp hết hàng ({lowStockCount})
-        </button>
-
-        {(search || categoryFilter !== 'All' || statusFilter !== 'All' || lowStockOnly) && (
-          <button
-            onClick={() => { setSearch(''); setCategoryFilter('All'); setStatusFilter('All'); setLowStockOnly(false); }}
-            className="text-xs font-bold text-accent hover:text-accent-dark transition-colors px-2 whitespace-nowrap"
-          >
-            Xóa bộ lọc
-          </button>
-        )}
       </div>
 
       {/* Products Table */}
@@ -295,7 +306,7 @@ const AdminProducts = () => {
                       <span className="text-sm font-black text-text-dark line-clamp-1">{p.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-[11px] font-bold text-text-gray uppercase">{p.category}</td>
+                  <td className="px-6 py-4 text-[11px] font-bold text-text-gray uppercase">{p.category.split(' (')[0]}</td>
                   <td className="px-6 py-4 text-right text-sm font-black text-primary">{formatPrice(p.price)}</td>
                   <td className="px-6 py-4 text-center">
                     <span className={`px-2 py-1 rounded-lg text-xs font-bold ${p.stock <= 5 ? 'bg-danger/10 text-danger' : p.stock <= 10 ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
@@ -335,10 +346,10 @@ const AdminProducts = () => {
         </table>
       </div>
 
-      <Pagination 
-        currentPage={page} 
-        totalPages={totalPages} 
-        onPageChange={(p) => setPage(p)} 
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={(p) => setPage(p)}
       />
 
       {/* Product Modal */}
@@ -352,7 +363,7 @@ const AdminProducts = () => {
                 <h2 className="text-2xl font-bold text-text-dark">{editingId ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</h2>
                 <p className="text-sm text-text-gray mt-0.5 font-medium italic">Cập nhật thông tin chi tiết cho mặt hàng trong cửa hàng.</p>
               </div>
-              <button 
+              <button
                 onClick={() => setShowModal(false)}
                 className="p-3 hover:bg-white rounded-full text-text-light hover:text-danger transition-all shadow-sm border border-transparent hover:border-border"
               >
@@ -368,7 +379,7 @@ const AdminProducts = () => {
                   <div className="space-y-6">
                     <div>
                       <label className="block text-xs font-bold text-text-gray uppercase tracking-wider mb-2.5">Tên sản phẩm *</label>
-                      <input 
+                      <input
                         type="text" name="name" value={formData.name} onChange={handleInputChange}
                         placeholder="Nhập tên sản phẩm..."
                         className="w-full px-5 py-3.5 bg-bg-gray/50 border border-border rounded-2xl text-sm font-semibold focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all"
@@ -377,7 +388,7 @@ const AdminProducts = () => {
 
                     <div className="relative">
                       <label className="block text-xs font-bold text-text-gray uppercase tracking-wider mb-2.5">Danh mục *</label>
-                      <div 
+                      <div
                         onClick={() => setShowFormCatDropdown(!showFormCatDropdown)}
                         className="w-full px-5 py-3.5 bg-bg-gray/50 border border-border rounded-2xl text-sm font-semibold flex items-center justify-between cursor-pointer hover:border-primary transition-colors"
                       >
@@ -386,7 +397,7 @@ const AdminProducts = () => {
                         </span>
                         <FiChevronDown className={`text-text-light transition-transform ${showFormCatDropdown ? 'rotate-180' : ''}`} size={18} />
                       </div>
-                      
+
                       {showFormCatDropdown && (
                         <div className="absolute left-0 mt-2 w-full bg-white rounded-[1.5rem] shadow-2xl border border-border py-4 z-[120] animate-fade-in">
                           {categoryGroups.map((cat) => (
@@ -397,12 +408,12 @@ const AdminProducts = () => {
                               </div>
                               <div className="absolute left-[99%] top-0 min-w-[240px] bg-white rounded-[1.5rem] shadow-2xl border border-border py-4 opacity-0 invisible group-hover/cat:opacity-100 group-hover/cat:visible transition-all duration-200 z-[130]">
                                 {cat.subs.map((sub) => (
-                                  <div 
+                                  <div
                                     key={sub}
-                                    onClick={() => { setFormData({...formData, category: `${sub} (${cat.label})`}); setShowFormCatDropdown(false); }}
+                                    onClick={() => { setFormData({ ...formData, category: sub }); setShowFormCatDropdown(false); }}
                                     className="px-7 py-2.5 text-sm font-semibold text-text-gray hover:text-primary hover:bg-bg-gray/50 cursor-pointer transition-colors"
                                   >
-                                    {sub}
+                                    {sub.split(' (')[0]}
                                   </div>
                                 ))}
                               </div>
@@ -415,14 +426,14 @@ const AdminProducts = () => {
                     <div className="grid grid-cols-2 gap-6">
                       <div>
                         <label className="block text-xs font-bold text-text-gray uppercase tracking-wider mb-2.5">Giá gốc (VNĐ) *</label>
-                        <input 
+                        <input
                           type="number" name="originalPrice" value={formData.originalPrice} onChange={handleInputChange}
                           className="w-full px-5 py-3.5 bg-bg-gray/50 border border-border rounded-2xl text-sm font-bold text-text-dark focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all"
                         />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-text-gray uppercase tracking-wider mb-2.5">Giá giảm (VNĐ) *</label>
-                        <input 
+                        <input
                           type="number" name="price" value={formData.price} onChange={handleInputChange}
                           className="w-full px-5 py-3.5 bg-bg-gray/50 border border-border rounded-2xl text-sm font-bold text-primary focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all"
                         />
@@ -432,7 +443,7 @@ const AdminProducts = () => {
                     <div className="grid grid-cols-2 gap-6">
                       <div>
                         <label className="block text-xs font-bold text-text-gray uppercase tracking-wider mb-2.5">Số lượng tồn kho *</label>
-                        <input 
+                        <input
                           type="number" name="stock" value={formData.stock} onChange={handleInputChange}
                           className="w-full px-5 py-3.5 bg-bg-gray/50 border border-border rounded-2xl text-sm font-bold text-text-dark focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all"
                         />
@@ -441,7 +452,7 @@ const AdminProducts = () => {
 
                     <div>
                       <label className="block text-xs font-bold text-text-gray uppercase tracking-wider mb-2.5">Mô tả sản phẩm</label>
-                      <textarea 
+                      <textarea
                         name="description" rows={5} value={formData.description} onChange={handleInputChange}
                         placeholder="Mô tả đặc điểm, công dụng, thành phần..."
                         className="w-full px-5 py-4 bg-bg-gray/50 border border-border rounded-[1.5rem] text-sm font-medium focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all resize-none"
@@ -453,7 +464,7 @@ const AdminProducts = () => {
                 {/* Right side - Image */}
                 <div className="lg:col-span-5 flex flex-col h-full">
                   <label className="block text-xs font-bold text-text-gray uppercase tracking-wider mb-2.5">Hình ảnh sản phẩm</label>
-                  <div 
+                  <div
                     onClick={() => fileInputRef.current.click()}
                     className="flex-1 min-h-[300px] bg-bg-gray/30 border-2 border-dashed border-border rounded-[2.5rem] flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:border-primary transition-all group overflow-hidden relative"
                   >
@@ -477,7 +488,7 @@ const AdminProducts = () => {
                     )}
                   </div>
                   <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
-                  
+
                   {/* Action Buttons */}
                   <div className="grid grid-cols-3 gap-4 mt-8">
                     <button

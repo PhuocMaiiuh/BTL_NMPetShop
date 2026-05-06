@@ -15,17 +15,19 @@ const AdminDashboard = () => {
     const loadDashboardData = async () => {
       setLoading(true);
       try {
-        const [prodData, userData, ordStats, ordData] = await Promise.all([
-          fetchProducts({ limit: 1 }), // Just to get total
-          fetchUsers({ limit: 1 }),    // Just to get total (backend currently returns array, I'll use length)
+        const [ordStats, ordData] = await Promise.all([
           fetchOrderStats(),
-          fetchOrders({ limit: 5 })    // Recent 5
+          fetchOrders({ limit: 5 })
         ]);
         
-        setProductsCount(prodData.total || 0);
-        setUsersCount(userData.length || 0); // Backend returns array for now
-        setOrderStats(ordStats);
-        setRecentOrders(ordData.slice(0, 5));
+        setProductsCount(ordStats.totalProducts || 0);
+        setUsersCount(ordStats.totalCustomers || 0);
+        setOrderStats({
+          totalOrders: ordStats.totalOrders || 0,
+          totalRevenue: ordStats.totalRevenue || 0,
+          pendingOrders: ordStats.pendingOrders || 0
+        });
+        setRecentOrders(ordData.orders || []);
       } catch (err) {
         console.error('Failed to load dashboard data:', err);
       } finally {
@@ -66,10 +68,10 @@ const AdminDashboard = () => {
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'Delivered': return 'Hoàn thành';
-      case 'Shipping': return 'Đang giao';
+      case 'Delivered': return 'Đã giao hàng';
+      case 'Shipping': return 'Đang giao hàng';
       case 'Confirmed': return 'Đã xác nhận';
-      case 'Pending': return 'Chờ xử lý';
+      case 'Pending': return 'Chờ xác nhận';
       case 'Cancelled': return 'Đã hủy';
       default: return status;
     }

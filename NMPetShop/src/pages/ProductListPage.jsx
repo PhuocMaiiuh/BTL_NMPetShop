@@ -124,7 +124,7 @@ const ProductListPage = () => {
         priceMin,
         priceMax,
         page: currentPage,
-        limit: ITEMS_PER_PAGE,
+        limit: filterParam === 'top-selling' ? 10 : ITEMS_PER_PAGE,
         sort: sortMap[sortBy] || '',
       });
       setProducts(data.products);
@@ -171,7 +171,56 @@ const ProductListPage = () => {
 
   const hasFilters = selectedCategories.length || selectedBrands.length || selectedPrices.length;
 
-  const visibleCats   = showAllCats   ? availableCats   : availableCats.slice(0, VISIBLE_LIMIT);
+  const filteredAvailableCats = useMemo(() => {
+    const SUFFIX_MAP = {
+      cho: '(Sản phẩm cho Chó)',
+      meo: '(Sản phẩm cho Mèo)',
+      'phu-kien': '(Phụ kiện)',
+      'do-choi': '(Đồ chơi)',
+      'suc-khoe': '(Chăm sóc sức khỏe)'
+    };
+    const CATEGORY_ORDER = [
+      'Thức ăn hạt',
+      'Pate & Đồ hộp',
+      'Sữa tắm & Vệ sinh',
+      'Vòng cổ & Dây dắt',
+      'Bát ăn & Bình nước',
+      'Giường nệm & Chuồng',
+      'Túi vận chuyển & Lồng',
+      'Phụ kiện chung',
+      'Đồ chơi nhai gặm',
+      'Cần câu & Bóng',
+      'Bàn cào móng',
+      'Đồ chơi chung',
+      'Thuốc & Vitamin',
+      'Dụng cụ cắt tỉa',
+      'Vệ sinh & Khử mùi',
+      'Chăm sóc & Y tế',
+      'Phụ kiện',
+      'Đồ chơi',
+      'Chăm sóc khác'
+    ];
+
+    const suffix = SUFFIX_MAP[categoryParam];
+    let cats = availableCats;
+    if (suffix) {
+      cats = availableCats.filter(cat => cat.includes(suffix));
+    }
+
+    // Custom sort based on CATEGORY_ORDER
+    return [...cats].sort((a, b) => {
+      const nameA = a.split(' (')[0];
+      const nameB = b.split(' (')[0];
+      const indexA = CATEGORY_ORDER.indexOf(nameA);
+      const indexB = CATEGORY_ORDER.indexOf(nameB);
+      if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
+  }, [availableCats, categoryParam]);
+
+  const visibleCats   = filteredAvailableCats;
   const visibleBrands = showAllBrands ? availableBrands : availableBrands.slice(0, VISIBLE_LIMIT);
 
   // Smart pagination
@@ -192,7 +241,7 @@ const ProductListPage = () => {
         <Link to="/" className="hover:text-primary">Trang chủ</Link>
         <span>/</span>
         <span className="text-text-dark font-medium">
-          {filterParam === 'top-selling' ? 'Sản phẩm bán chạy nhất' : breadcrumbLabels[categoryParam] || ''}
+          {filterParam === 'top-selling' ? 'Top 10 Sản phẩm bán chạy' : breadcrumbLabels[categoryParam] || ''}
         </span>
       </nav>
 
@@ -201,11 +250,6 @@ const ProductListPage = () => {
         <aside className="hidden lg:block w-64 flex-shrink-0">
 
           {/* Clear filters */}
-          {hasFilters ? (
-            <button onClick={clearAll} className="w-full mb-4 text-sm text-accent hover:underline text-left">
-              ✕ Xóa bộ lọc
-            </button>
-          ) : null}
 
           {/* Danh mục */}
           <div className="mb-8">
@@ -218,11 +262,13 @@ const ProductListPage = () => {
                 bold
               />
               {visibleCats.map(cat => (
-                <FilterCheckbox key={cat} label={cat} checked={selectedCategories.includes(cat)} onClick={() => handleCatClick(cat)} />
+                <FilterCheckbox 
+                  key={cat} 
+                  label={cat.replace(/\s*\(.*?\)$/, '')} 
+                  checked={selectedCategories.includes(cat)} 
+                  onClick={() => handleCatClick(cat)} 
+                />
               ))}
-              {availableCats.length > VISIBLE_LIMIT && (
-                <ExpandBtn expanded={showAllCats} onToggle={() => setShowAllCats(v => !v)} extra={availableCats.length - VISIBLE_LIMIT} />
-              )}
             </div>
           </div>
 

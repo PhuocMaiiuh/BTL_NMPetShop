@@ -1,19 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { FiTrash2, FiMinus, FiPlus } from 'react-icons/fi';
 import { useCart } from '../contexts/CartContext';
 import { useToast } from '../contexts/ToastContext';
+import { fetchPromotions } from '../services/promotionApi';
 
 const formatPrice = (p) => new Intl.NumberFormat('vi-VN').format(p) + 'đ';
 
 const CartPage = () => {
-  const { cartItems, updateQuantity, removeFromCart, cartSubtotal } = useCart();
+  const { cartItems, updateQuantity, removeFromCart, cartSubtotal, selectedPromo, setSelectedPromo } = useCart();
   const { addToast } = useToast();
-  const [discountValue, setDiscountValue] = useState(0);
+  const [promotions, setPromotions] = useState([]);
   const [itemToDelete, setItemToDelete] = useState(null);
 
+  useEffect(() => {
+    fetchPromotions({ filterStatus: 'active' })
+      .then(data => setPromotions(data.promotions || []))
+      .catch(err => console.error('Failed to fetch promotions:', err));
+  }, []);
+
   const shipping = 30000;
-  const discountAmount = discountValue <= 1 ? cartSubtotal * discountValue : discountValue;
+  
+  const discountAmount = useMemo(() => {
+    if (!selectedPromo) return 0;
+    if (selectedPromo.discountType === 'percentage') {
+      return (cartSubtotal * selectedPromo.discountValue) / 100;
+    }
+    if (selectedPromo.discountType === 'fixed') {
+      return selectedPromo.discountValue;
+    }
+    if (selectedPromo.discountType === 'free_shipping') {
+      return shipping;
+    }
+    return 0;
+  }, [selectedPromo, cartSubtotal, shipping]);
+
   const total = Math.max(0, cartSubtotal + shipping - discountAmount);
 
   const handleRemove = (item) => {
@@ -123,13 +144,18 @@ const CartPage = () => {
                 <div className="pt-1 pb-1">
                   <select
                     className="w-full px-4 py-2 border border-border rounded-lg text-sm focus:border-primary outline-none appearance-none bg-white cursor-pointer text-text-dark"
-                    value={discountValue}
-                    onChange={(e) => setDiscountValue(Number(e.target.value))}
+                    value={selectedPromo?._id || ''}
+                    onChange={(e) => {
+                      const promo = promotions.find(p => p._id === e.target.value);
+                      setSelectedPromo(promo || null);
+                    }}
                   >
-                    <option value={0}>Chọn mã giảm giá...</option>
-                    <option value={0.1}>Giảm 10% - Khách hàng mới</option>
-                    <option value={0.15}>Giảm 15% - Mùa hè rực rỡ</option>
-                    <option value={30000}>Freeship - Giảm 30K</option>
+                    <option value="">Chọn mã giảm giá...</option>
+                    {promotions.map(p => (
+                      <option key={p._id} value={p._id}>
+                        {p.code} - {p.discountType === 'percentage' ? `Giảm ${p.discountValue}%` : p.discountType === 'fixed' ? `Giảm ${formatPrice(p.discountValue)}` : 'Miễn phí vận chuyển'}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="border-t border-border pt-3 flex justify-between">

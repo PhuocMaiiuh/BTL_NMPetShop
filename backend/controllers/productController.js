@@ -37,16 +37,16 @@ const buildQuery = (reqQuery) => {
   // Category keyword or specific category
   if (category) {
     if (CATEGORY_KEYWORDS[category]) {
-      const kw = CATEGORY_KEYWORDS[category];
-      const categoryQuery = [
-        { category: { $regex: kw, $options: 'i' } },
-        { name:     { $regex: kw, $options: 'i' } },
-      ];
-      if (query.$or) {
-          query.$and = [{ $or: query.$or }, { $or: categoryQuery }];
-          delete query.$or;
-      } else {
-          query.$or = categoryQuery;
+      const SUFFIX_MAP = {
+        cho: '(Sản phẩm cho Chó)',
+        meo: '(Sản phẩm cho Mèo)',
+        'phu-kien': '(Phụ kiện)',
+        'do-choi': '(Đồ chơi)',
+        'suc-khoe': '(Chăm sóc sức khỏe)'
+      };
+      const suffix = SUFFIX_MAP[category];
+      if (suffix) {
+        query.category = { $regex: suffix.replace('(', '\\(').replace(')', '\\)'), $options: 'i' };
       }
     } else {
       // If not a keyword, it's a specific category from admin or direct filter
@@ -98,18 +98,21 @@ const getProducts = async (req, res, next) => {
     const { page = 1, limit = 20, sort } = req.query;
     const query   = buildQuery(req.query);
     const sortObj = buildSort(sort);
-    const skip    = (Number(page) - 1) * Number(limit);
+    const isTopSelling = req.query.filter === 'top-selling';
+    const effectiveLimit = isTopSelling ? 10 : Number(limit);
+    const skip = (Number(page) - 1) * Number(limit);
+    const effectiveSkip = isTopSelling ? 0 : skip;
 
-    const [products, total] = await Promise.all([
-      Product.find(query).sort(sortObj).skip(skip).limit(Number(limit)).lean(),
+    const [products, totalCount] = await Promise.all([
+      Product.find(query).sort(sortObj).skip(effectiveSkip).limit(effectiveLimit).lean(),
       Product.countDocuments(query),
     ]);
 
     res.json({
       products,
-      total,
-      page:       Number(page),
-      totalPages: Math.ceil(total / Number(limit)),
+      total: isTopSelling ? Math.min(10, totalCount) : totalCount,
+      page: isTopSelling ? 1 : Number(page),
+      totalPages: isTopSelling ? 1 : Math.ceil(totalCount / effectiveLimit),
     });
   } catch (err) {
     next(err);

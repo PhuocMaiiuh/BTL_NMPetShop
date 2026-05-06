@@ -28,3 +28,27 @@ export async function deleteOrder(orderId) {
   if (!res.ok) throw new Error('Failed to delete order');
   return res.json();
 }
+
+export async function fetchUserOrders(userId) {
+  const res = await fetch(`${BASE}/orders/user/${userId}`);
+  if (!res.ok) throw new Error('Failed to fetch user orders');
+  return res.json();
+}
+
+export async function fetchOrderById(orderId) {
+  const res = await fetch(`${BASE}/orders/${orderId}`);
+  if (!res.ok) throw new Error('Failed to fetch order details');
+  return res.json();
+}
+export async function createOrder(data) {
+  const res = await fetch(`${BASE}/orders/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error || 'Failed to create order');
+  }
+  return res.json();
+}

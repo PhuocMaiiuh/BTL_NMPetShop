@@ -28,13 +28,14 @@ const AuthPage = () => {
     if (error) setError('');
   };
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
       setError('Vui lòng nhập đầy đủ email và mật khẩu');
       return;
     }
-    const result = login(formData.email, formData.password);
+    setError('');
+    const result = await login(formData.email, formData.password);
     if (result.success) {
       navigate(result.user.role === 'admin' ? '/admin' : '/', { replace: true });
     } else {

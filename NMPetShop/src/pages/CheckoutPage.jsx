@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useToast } from '../contexts/ToastContext';
+import { fetchPromotions } from '../services/promotionApi';
+import { createOrder } from '../services/orderApi';
 
 const formatPrice = (p) => new Intl.NumberFormat('vi-VN').format(p) + 'đ';
 const steps = [
@@ -36,14 +39,37 @@ const Field = ({ name, label, placeholder, required, type='text', value, onChang
 );
 
 const CheckoutPage = () => {
-  const { cartItems, cartSubtotal, removeFromCart } = useCart();
+  const { cartItems, cartSubtotal, removeFromCart, selectedPromo, clearCart } = useCart();
+  const { user } = useAuth();
   const { addToast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [orderPlaced, setOrderPlaced] = useState(false);
-  const [orderId] = useState(() => 'NM-' + Math.floor(Math.random() * 90000 + 10000));
-  const [formData, setFormData] = useState({ fullName:'', phone:'', email:'', address:'', city:'', note:'', paymentMethod:'cod' });
+  const [orderId] = useState(() => `ORD-${Date.now()}-${Math.floor(Math.random() * 90 + 10)}`);
+  const [formData, setFormData] = useState({ 
+    fullName: user?.name || '', 
+    phone: user?.phone || '', 
+    email: user?.email || '', 
+    address: user?.address || '', 
+    city: '', 
+    note: '', 
+    paymentMethod: 'cod' 
+  });
   const [errors, setErrors] = useState({});
-  const [discountValue, setDiscountValue] = useState(0);
+  const [placedOrderData, setPlacedOrderData] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Sync user data if it loads later
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        fullName: prev.fullName || user.name || '',
+        phone: prev.phone || user.phone || '',
+        email: prev.email || user.email || '',
+        address: prev.address || user.address || '',
+      }));
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -52,7 +78,20 @@ const CheckoutPage = () => {
   };
 
   const shipping = 30000;
-  const discountAmount = discountValue <= 1 ? cartSubtotal * discountValue : discountValue;
+  const discountAmount = useMemo(() => {
+    if (!selectedPromo) return 0;
+    if (selectedPromo.discountType === 'percentage') {
+      return (cartSubtotal * selectedPromo.discountValue) / 100;
+    }
+    if (selectedPromo.discountType === 'fixed') {
+      return selectedPromo.discountValue;
+    }
+    if (selectedPromo.discountType === 'free_shipping') {
+      return shipping;
+    }
+    return 0;
+  }, [selectedPromo, cartSubtotal, shipping]);
+
   const total = Math.max(0, cartSubtotal + shipping - discountAmount);
 
   const handleStep1Continue = () => {
@@ -61,11 +100,58 @@ const CheckoutPage = () => {
     setCurrentStep(2);
   };
 
-  const handlePlaceOrder = () => {
-    const ids = cartItems.map(i => i.id);
-    ids.forEach(id => removeFromCart(id));
-    setOrderPlaced(true);
-    addToast('Đặt hàng thành công! Cảm ơn bạn đã mua hàng.', 'success', 4000);
+  const handlePlaceOrder = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    
+    try {
+      const orderData = {
+        orderId: orderId,
+        user: user?._id || null,
+        customerName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        shippingAddress: `${formData.address}, ${formData.city}`,
+        items: cartItems.map(item => ({
+          productId: item.id,
+          name: item.name,
+          image: item.image,
+          price: item.price,
+          quantity: item.quantity
+        })),
+        totalAmount: total,
+        discountAmount: discountAmount,
+        shippingFee: shipping,
+        promoCode: selectedPromo?.code || '',
+        paymentMethod: formData.paymentMethod.toUpperCase(),
+        note: formData.note
+      };
+
+      await createOrder(orderData);
+      
+      // Store current cart items for the success view before clearing
+      setPlacedOrderData({
+        items: [...cartItems],
+        total: total,
+        subtotal: cartSubtotal,
+        shipping: shipping,
+        discount: discountAmount,
+        orderId: orderId,
+        promoCode: selectedPromo?.code,
+        promoDescription: selectedPromo?.discountType === 'percentage' ? `Giảm ${selectedPromo.discountValue}%` : 
+                         selectedPromo?.discountType === 'fixed' ? `Giảm ${formatPrice(selectedPromo.discountValue)}` : 
+                         selectedPromo?.discountType === 'free_shipping' ? 'Miễn phí vận chuyển' : ''
+      });
+
+      clearCart();
+      setOrderPlaced(true);
+      addToast('Đặt hàng thành công! Cảm ơn bạn đã mua hàng.', 'success', 4000);
+    } catch (err) {
+      console.error('Order failed:', err);
+      addToast(err.message || 'Đặt hàng thất bại. Vui lòng thử lại.', 'danger');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
 
@@ -242,11 +328,18 @@ const CheckoutPage = () => {
         </div>
 
         {/* Order Summary */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 h-fit">
           <div className="bg-white rounded-xl border border-border p-6 sticky top-24">
-            <h3 className="font-semibold text-text-dark mb-4">Đơn hàng ({cartItems.length} sản phẩm)</h3>
+            <h3 className="font-semibold text-text-dark mb-4">Đơn hàng ({(orderPlaced && placedOrderData) ? placedOrderData.items.length : cartItems.length} sản phẩm)</h3>
             <div className="space-y-3 mb-4 max-h-52 overflow-y-auto">
-              {cartItems.length === 0 ? <p className="text-sm text-text-gray text-center py-3">Giỏ hàng trống</p> :
+              {orderPlaced && placedOrderData ? (
+                placedOrderData.items.map((item, i) => (
+                  <div key={i} className="flex justify-between text-sm">
+                    <span className="text-text-gray truncate max-w-[60%]">{item.name} x{item.quantity}</span>
+                    <span className="font-medium ml-2">{formatPrice(item.price * item.quantity)}</span>
+                  </div>
+                ))
+              ) : cartItems.length === 0 ? <p className="text-sm text-text-gray text-center py-3">Giỏ hàng trống</p> :
                 cartItems.map((item, i) => (
                   <div key={i} className="flex justify-between text-sm">
                     <span className="text-text-gray truncate max-w-[60%]">{item.name} x{item.quantity}</span>
@@ -256,18 +349,53 @@ const CheckoutPage = () => {
               }
             </div>
             <div className="mb-4">
-              <select className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:border-primary outline-none appearance-none bg-white" value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value))}>
-                <option value={0}>Chọn mã giảm giá...</option>
-                <option value={0.1}>Giảm 10% - Khách hàng mới</option>
-                <option value={0.15}>Giảm 15% - Mùa hè rực rỡ</option>
-                <option value={30000}>Freeship - Giảm 30K</option>
-              </select>
+              {orderPlaced && placedOrderData?.promoCode ? (
+                <div className="px-4 py-3 bg-primary/5 border border-primary/20 rounded-xl">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-primary uppercase tracking-wider">{placedOrderData.promoCode}</span>
+                    <FiCheck className="text-success" size={14} />
+                  </div>
+                  <p className="text-[11px] text-text-gray leading-tight">
+                    {placedOrderData.promoDescription || 'Mã giảm giá đã được áp dụng thành công'}
+                  </p>
+                </div>
+              ) : selectedPromo ? (
+                <div className="px-4 py-3 bg-primary/5 border border-primary/20 rounded-xl">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-primary uppercase tracking-wider">{selectedPromo.code}</span>
+                    <FiCheck className="text-success" size={14} />
+                  </div>
+                  <p className="text-[11px] text-text-gray leading-tight">
+                    {selectedPromo.discountType === 'percentage' ? `Giảm ${selectedPromo.discountValue}%` : 
+                     selectedPromo.discountType === 'fixed' ? `Giảm ${formatPrice(selectedPromo.discountValue)}` : 
+                     'Miễn phí vận chuyển'}
+                  </p>
+                </div>
+              ) : (
+                <div className="px-4 py-3 bg-bg-gray border border-dashed border-border rounded-xl text-center">
+                  <p className="text-[11px] text-text-light font-medium italic">Chưa áp dụng mã giảm giá</p>
+                </div>
+              )}
             </div>
             <div className="border-t border-border pt-3 space-y-2">
-              <div className="flex justify-between text-sm"><span className="text-text-gray">Tạm tính</span><span>{formatPrice(cartSubtotal)}</span></div>
-              <div className="flex justify-between text-sm"><span className="text-text-gray">Vận chuyển</span><span>{formatPrice(shipping)}</span></div>
-              {discountAmount > 0 && <div className="flex justify-between text-sm"><span className="text-text-gray">Giảm giá</span><span className="text-green-600">-{formatPrice(discountAmount)}</span></div>}
-              <div className="border-t border-border pt-3 flex justify-between"><span className="font-semibold">Tổng</span><span className="text-lg font-bold text-primary">{formatPrice(total)}</span></div>
+              <div className="flex justify-between text-sm">
+                <span className="text-text-gray">Tạm tính</span>
+                <span>{formatPrice(orderPlaced ? placedOrderData?.subtotal : cartSubtotal)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-text-gray">Vận chuyển</span>
+                <span>{formatPrice(orderPlaced ? placedOrderData?.shipping : shipping)}</span>
+              </div>
+              {(orderPlaced ? placedOrderData?.discount : discountAmount) > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-text-gray">Giảm giá</span>
+                  <span className="text-green-600">-{formatPrice(orderPlaced ? placedOrderData?.discount : discountAmount)}</span>
+                </div>
+              )}
+              <div className="border-t border-border pt-3 flex justify-between">
+                <span className="font-semibold">Tổng</span>
+                <span className="text-lg font-bold text-primary">{formatPrice(orderPlaced ? placedOrderData?.total : total)}</span>
+              </div>
             </div>
           </div>
         </div>

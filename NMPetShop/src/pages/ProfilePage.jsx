@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FiEdit2, FiExternalLink, FiCamera, FiSave, FiX, FiAlertCircle } from 'react-icons/fi';
+import { FiEdit2, FiExternalLink, FiCamera, FiSave, FiX, FiAlertCircle, FiLoader, FiChevronLeft, FiChevronRight, FiArrowUp, FiArrowDown } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { fetchUserOrders } from '../services/orderApi';
 
 const EditField = ({ name, label, placeholder, value, onChange, error }) => (
   <div>
@@ -29,11 +30,37 @@ const ProfilePage = () => {
   const [editData, setEditData] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
 
-  const orders = [
-    { id: '#NM-9876', date: '24/10/2023', total: 1250000, status: 'Đang giao', statusColor: 'bg-warning/10 text-warning' },
-    { id: '#NM-9842', date: '15/10/2023', total: 850000, status: 'Hoàn thành', statusColor: 'bg-success/10 text-success' },
-    { id: '#NM-9710', date: '02/10/2023', total: 2100000, status: 'Hoàn thành', statusColor: 'bg-success/10 text-success' },
-  ];
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState('newest'); // 'newest' | 'oldest'
+  const ORDERS_PER_PAGE = 5;
+
+  useEffect(() => {
+    if (user?._id) {
+      setLoadingOrders(true);
+      fetchUserOrders(user._id)
+        .then(data => {
+          setOrders(data);
+          setLoadingOrders(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setLoadingOrders(false);
+        });
+    }
+  }, [user?._id]);
+
+  const getStatusInfo = (status) => {
+    switch (status) {
+      case 'Pending':   return { label: 'Chờ xử lý', color: 'bg-amber-100 text-amber-700' };
+      case 'Confirmed': return { label: 'Đã xác nhận', color: 'bg-blue-100 text-blue-700' };
+      case 'Shipping':  return { label: 'Đang giao', color: 'bg-indigo-100 text-indigo-700' };
+      case 'Delivered': return { label: 'Hoàn thành', color: 'bg-emerald-100 text-emerald-700' };
+      case 'Cancelled': return { label: 'Đã hủy', color: 'bg-rose-100 text-rose-700' };
+      default:          return { label: status, color: 'bg-gray-100 text-gray-700' };
+    }
+  };
 
   const formatPrice = (p) => new Intl.NumberFormat('vi-VN').format(p) + 'đ';
 
@@ -181,35 +208,133 @@ const ProfilePage = () => {
       </div>
 
       {/* Recent Orders */}
-      <div className="bg-white rounded-xl border border-border p-6">
-        <h3 className="text-lg font-semibold text-text-dark mb-6">Đơn hàng gần đây</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-xs font-semibold text-text-gray uppercase border-b border-border">
-                <th className="pb-3 pr-4">Mã đơn</th>
-                <th className="pb-3 pr-4">Ngày</th>
-                <th className="pb-3 pr-4">Tổng tiền</th>
-                <th className="pb-3 pr-4">Trạng thái</th>
-                <th className="pb-3">Chi tiết</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.id} className="border-b border-border last:border-0 hover:bg-bg-gray/50 transition-colors">
-                  <td className="py-4 pr-4 text-sm font-medium text-primary">{order.id}</td>
-                  <td className="py-4 pr-4 text-sm text-text-gray">{order.date}</td>
-                  <td className="py-4 pr-4 text-sm font-semibold text-secondary">{formatPrice(order.total)}</td>
-                  <td className="py-4 pr-4"><span className={`px-3 py-1 rounded-full text-xs font-medium ${order.statusColor}`}>{order.status}</span></td>
-                  <td className="py-4">
-                    <Link to={`/don-hang/${order.id.replace('#', '')}`} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-colors">
-                      <FiExternalLink size={12}/> Xem chi tiết
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="bg-white rounded-xl border border-border p-6 shadow-sm overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h3 className="text-lg font-bold text-text-dark">Đơn hàng gần đây</h3>
+          
+          <div className="flex items-center gap-1.5 p-1 bg-bg-gray rounded-lg w-fit">
+            <button
+              onClick={() => { setSortOrder('newest'); setCurrentPage(1); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${sortOrder === 'newest' ? 'bg-white text-primary shadow-sm' : 'text-text-gray hover:text-text-dark'}`}
+            >
+              <FiArrowDown size={12} /> Gần nhất
+            </button>
+            <button
+              onClick={() => { setSortOrder('oldest'); setCurrentPage(1); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${sortOrder === 'oldest' ? 'bg-white text-primary shadow-sm' : 'text-text-gray hover:text-text-dark'}`}
+            >
+              <FiArrowUp size={12} /> Xa nhất
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto -mx-6 px-6">
+          {loadingOrders ? (
+            <div className="py-16 text-center">
+              <FiLoader size={28} className="animate-spin text-primary mx-auto mb-3" />
+              <p className="text-xs text-text-gray font-bold uppercase tracking-widest">Đang tải lịch sử đơn hàng...</p>
+            </div>
+          ) : orders.length > 0 ? (
+            (() => {
+              const sorted = [...orders].sort((a, b) => {
+                const dateA = new Date(a.createdAt);
+                const dateB = new Date(b.createdAt);
+                return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+              });
+              const totalPages = Math.ceil(sorted.length / ORDERS_PER_PAGE);
+              const startIndex = (currentPage - 1) * ORDERS_PER_PAGE;
+              const visibleOrders = sorted.slice(startIndex, startIndex + ORDERS_PER_PAGE);
+
+              return (
+                <>
+                  <div className="min-h-[360px]">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="text-left text-[11px] font-black text-text-gray uppercase tracking-widest border-b border-border">
+                          <th className="pb-3 pr-4">Mã đơn</th>
+                          <th className="pb-3 pr-4">Ngày</th>
+                          <th className="pb-3 pr-4">Tổng tiền</th>
+                          <th className="pb-3 pr-4 text-center">Trạng thái</th>
+                          <th className="pb-3 text-right">Chi tiết</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visibleOrders.map((order) => {
+                          const status = getStatusInfo(order.status);
+                          return (
+                            <tr key={order._id} className="group border-b border-border last:border-0 hover:bg-primary/[0.02] transition-colors h-[64px]">
+                              <td className="py-4 pr-4 text-sm font-black text-primary uppercase tracking-tighter">{order.orderId}</td>
+                              <td className="py-4 pr-4 text-sm text-text-gray font-medium">{new Date(order.createdAt).toLocaleDateString('vi-VN')}</td>
+                              <td className="py-4 pr-4 text-sm font-black text-secondary">{formatPrice(order.totalAmount)}</td>
+                              <td className="py-4 pr-4 text-center">
+                                <span className={`inline-block px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${status.color}`}>
+                                  {status.label}
+                                </span>
+                              </td>
+                              <td className="py-4 text-right">
+                                <Link to={`/don-hang/${order.orderId}`} className="inline-flex items-center gap-2 px-4 py-2 text-xs font-black text-primary bg-primary/5 hover:bg-primary hover:text-white rounded-xl transition-all duration-300">
+                                  <FiExternalLink size={12}/> Xem chi tiết
+                                </Link>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {/* Fill empty space to prevent layout jump */}
+                        {visibleOrders.length < ORDERS_PER_PAGE && [...Array(ORDERS_PER_PAGE - visibleOrders.length)].map((_, i) => (
+                          <tr key={`empty-${i}`} className="h-[64px] border-b border-border/30 last:border-0 opacity-0 pointer-events-none">
+                            <td colSpan="5">&nbsp;</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {totalPages > 1 && (
+                    <div className="mt-8 pt-8 border-t border-border/50">
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p className="text-xs text-text-gray font-medium">
+                          Hiển thị <span className="font-bold text-text-dark">{startIndex + 1}-{Math.min(startIndex + ORDERS_PER_PAGE, sorted.length)}</span> trên <span className="font-bold text-text-dark">{sorted.length}</span> đơn hàng
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                            className="p-2.5 rounded-xl border border-border hover:border-primary hover:text-primary disabled:opacity-30 disabled:hover:border-border disabled:hover:text-text-gray transition-all"
+                          >
+                            <FiChevronLeft size={16} />
+                          </button>
+                          <div className="flex items-center gap-1">
+                            {[...Array(totalPages)].map((_, i) => (
+                              <button
+                                key={i}
+                                onClick={() => setCurrentPage(i + 1)}
+                                className={`w-9 h-9 rounded-xl text-xs font-black transition-all ${currentPage === i + 1 ? 'bg-primary text-white shadow-lg shadow-primary/25' : 'hover:bg-primary/5 text-text-gray hover:text-primary'}`}
+                              >
+                                {i + 1}
+                              </button>
+                            ))}
+                          </div>
+                          <button
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage === totalPages}
+                            className="p-2.5 rounded-xl border border-border hover:border-primary hover:text-primary disabled:opacity-30 disabled:hover:border-border disabled:hover:text-text-gray transition-all"
+                          >
+                            <FiChevronRight size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()
+          ) : (
+            <div className="py-20 text-center">
+              <div className="w-20 h-20 bg-bg-gray rounded-full flex items-center justify-center mx-auto mb-5">
+                <FiExternalLink size={28} className="text-text-light opacity-40" />
+              </div>
+              <p className="text-sm text-text-gray font-bold italic">Bạn chưa có đơn hàng nào.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

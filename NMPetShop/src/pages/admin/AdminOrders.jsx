@@ -16,9 +16,9 @@ const formatDate = (dateString) => {
 
 const statusConfig = {
   'Pending': { label: 'Chờ xác nhận', color: 'text-warning bg-warning/10', icon: <FiClock size={14} /> },
-  'Confirmed': { label: 'Đang xử lý', color: 'text-info bg-info/10', icon: <FiPackage size={14} /> },
-  'Shipping': { label: 'Đang giao', color: 'text-secondary bg-secondary/10', icon: <FiTruck size={14} /> },
-  'Delivered': { label: 'Hoàn thành', color: 'text-success bg-success/10', icon: <FiCheck size={14} /> },
+  'Confirmed': { label: 'Đã xác nhận', color: 'text-info bg-info/10', icon: <FiPackage size={14} /> },
+  'Shipping': { label: 'Đang giao hàng', color: 'text-secondary bg-secondary/10', icon: <FiTruck size={14} /> },
+  'Delivered': { label: 'Đã giao hàng', color: 'text-success bg-success/10', icon: <FiCheck size={14} /> },
   'Cancelled': { label: 'Đã hủy', color: 'text-danger bg-danger/10', icon: <FiX size={14} /> },
 };
 
@@ -111,101 +111,102 @@ const AdminOrders = () => {
 
   return (
     <div className="pb-10">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-text-dark">Quản lý đơn hàng</h1>
-          <p className="text-sm text-text-gray mt-1">Theo dõi, cập nhật trạng thái và chi tiết đơn hàng của khách hàng.</p>
-        </div>
-        <div className="flex gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-lg text-sm font-medium hover:bg-bg-gray transition-colors text-text-dark">
-            <FiPrinter size={16} /> In báo cáo
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-lg text-sm font-medium hover:bg-bg-gray transition-colors text-text-dark">
-            <FiDownload size={16} /> Xuất Excel
-          </button>
-        </div>
-      </div>
-
-      {/* Search & Filters */}
-      <div className="flex items-center gap-3 mb-6 h-12">
-        <div className="flex-1 max-w-2xl relative h-full">
-          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" size={16} />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-full pl-10 pr-4 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all bg-white"
-            placeholder="Tìm theo mã đơn hàng hoặc số điện thoại..."
-          />
-        </div>
-
-        <div className="relative h-full" ref={statusRef}>
-          <button
-            onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-            className={`flex items-center justify-between gap-2 px-4 h-full w-[210px] border rounded-xl text-sm font-medium transition-all ${statusFilter !== 'All' ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'border-[#e2e8f0] text-[#64748b] hover:border-primary bg-white'}`}
-          >
-            <div className="flex items-center gap-2 overflow-hidden">
-              <FiFilter size={16} className="flex-shrink-0" />
-              <span className="truncate">{statusFilter === 'All' ? 'Tất cả trạng thái' : statusFilter}</span>
-            </div>
-            <FiChevronDown size={14} className={`transition-transform flex-shrink-0 ${showStatusDropdown ? 'rotate-180' : ''}`} />
-          </button>
-          {showStatusDropdown && (
-            <div className="absolute top-full left-0 mt-2 w-full bg-white border border-border rounded-xl shadow-xl z-20 overflow-hidden animate-fade-in">
-              <div 
-                onClick={() => { setStatusFilter('All'); setShowStatusDropdown(false); }} 
-                className="px-4 py-2.5 text-sm hover:bg-bg-gray cursor-pointer border-b border-border font-medium"
-              >
-                Tất cả trạng thái
-              </div>
-              {Object.keys(statusConfig).map(status => (
-                <div 
-                  key={status} 
-                  onClick={() => { setStatusFilter(status); setShowStatusDropdown(false); }} 
-                  className={`px-4 py-2.5 text-sm hover:bg-bg-gray cursor-pointer ${statusFilter === status ? 'text-primary bg-primary/5 font-semibold' : 'text-text-gray'}`}
-                >
-                  {status}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="relative h-full" ref={sortRef}>
-          <button
-            onClick={() => setShowSortDropdown(!showSortDropdown)}
-            className={`flex items-center justify-between gap-2 px-4 h-full w-[180px] border rounded-xl text-sm font-medium transition-all ${sortOrder !== 'newest' ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'border-[#e2e8f0] text-[#64748b] hover:border-primary bg-white'}`}
-          >
-            <span className="truncate">
-              {sortOrder === 'newest' ? 'Mới nhất' : 
-               sortOrder === 'oldest' ? 'Cũ nhất' : 
-               sortOrder === 'highest' ? 'Giá trị cao nhất' : 'Giá trị thấp nhất'}
-            </span>
-            <FiChevronDown size={14} className={`transition-transform flex-shrink-0 ${showSortDropdown ? 'rotate-180' : ''}`} />
-          </button>
-          {showSortDropdown && (
-            <div className="absolute top-full left-0 mt-2 w-full bg-white border border-border rounded-xl shadow-xl z-20 overflow-hidden animate-fade-in">
-              <div onClick={() => { setSortOrder('newest'); setShowSortDropdown(false); }} className={`px-4 py-2.5 text-sm hover:bg-bg-gray cursor-pointer border-b border-border ${sortOrder === 'newest' ? 'text-primary bg-primary/5 font-semibold' : 'text-text-gray'}`}>Mới nhất</div>
-              <div onClick={() => { setSortOrder('oldest'); setShowSortDropdown(false); }} className={`px-4 py-2.5 text-sm hover:bg-bg-gray cursor-pointer ${sortOrder === 'oldest' ? 'text-primary bg-primary/5 font-semibold' : 'text-text-gray'}`}>Cũ nhất</div>
-              <div onClick={() => { setSortOrder('highest'); setShowSortDropdown(false); }} className={`px-4 py-2.5 text-sm hover:bg-bg-gray cursor-pointer ${sortOrder === 'highest' ? 'text-primary bg-primary/5 font-semibold' : 'text-text-gray'}`}>Giá trị cao nhất</div>
-              <div onClick={() => { setSortOrder('lowest'); setShowSortDropdown(false); }} className={`px-4 py-2.5 text-sm hover:bg-bg-gray cursor-pointer ${sortOrder === 'lowest' ? 'text-primary bg-primary/5 font-semibold' : 'text-text-gray'}`}>Giá trị thấp nhất</div>
-            </div>
-          )}
-        </div>
-
-        {/* Clear Filters Button - Fixed width container to prevent layout shift */}
-        <div className="w-24 flex-shrink-0 flex items-center h-full">
-          {(search || statusFilter !== 'All' || sortOrder !== 'newest') && (
-            <button
-              onClick={() => {
-                setSearch('');
-                setStatusFilter('All');
-                setSortOrder('newest');
-              }}
-              className="text-xs font-bold text-accent hover:text-accent-dark transition-colors px-2 whitespace-nowrap"
-            >
-              Xóa bộ lọc
+      <div className="sticky top-[-2rem] z-20 bg-admin-bg -mx-8 px-8 pt-8 pb-6 mb-2">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-text-dark">Quản lý đơn hàng</h1>
+            <p className="text-sm text-text-gray mt-1">Theo dõi, cập nhật trạng thái và chi tiết đơn hàng của khách hàng.</p>
+          </div>
+          <div className="flex gap-3">
+            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-lg text-sm font-medium hover:bg-bg-gray transition-colors text-text-dark">
+              <FiPrinter size={16} /> In báo cáo
             </button>
-          )}
+            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-lg text-sm font-medium hover:bg-bg-gray transition-colors text-text-dark">
+              <FiDownload size={16} /> Xuất Excel
+            </button>
+          </div>
+        </div>
+
+        {/* Search & Filters */}
+        <div className="flex items-center gap-3 h-12">
+          <div className="flex-1 max-w-2xl relative h-full">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" size={16} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full h-full pl-10 pr-4 border border-[#e2e8f0] rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all bg-white"
+              placeholder="Tìm theo mã đơn hàng hoặc số điện thoại..."
+            />
+          </div>
+
+          <div className="relative h-full" ref={statusRef}>
+            <button
+              onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+              className={`flex items-center justify-between gap-2 px-4 h-full w-[210px] border rounded-xl text-sm font-medium transition-all ${statusFilter !== 'All' ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'border-[#e2e8f0] text-[#64748b] hover:border-primary bg-white'}`}
+            >
+              <div className="flex items-center gap-2 overflow-hidden">
+                <FiFilter size={16} className="flex-shrink-0" />
+                <span className="truncate">{statusFilter === 'All' ? 'Tất cả trạng thái' : statusConfig[statusFilter]?.label}</span>
+              </div>
+              <FiChevronDown size={14} className={`transition-transform flex-shrink-0 ${showStatusDropdown ? 'rotate-180' : ''}`} />
+            </button>
+            {showStatusDropdown && (
+              <div className="absolute top-full left-0 mt-2 w-full bg-white border border-border rounded-xl shadow-xl z-20 overflow-hidden animate-fade-in">
+                <div 
+                  onClick={() => { setStatusFilter('All'); setShowStatusDropdown(false); }} 
+                  className="px-4 py-2.5 text-sm hover:bg-bg-gray cursor-pointer border-b border-border font-medium"
+                >
+                  Tất cả trạng thái
+                </div>
+                {Object.keys(statusConfig).map(status => (
+                  <div 
+                    key={status} 
+                    onClick={() => { setStatusFilter(status); setShowStatusDropdown(false); }} 
+                    className={`px-4 py-2.5 text-sm hover:bg-bg-gray cursor-pointer ${statusFilter === status ? 'text-primary bg-primary/5 font-semibold' : 'text-text-gray'}`}
+                  >
+                    {statusConfig[status].label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="relative h-full" ref={sortRef}>
+            <button
+              onClick={() => setShowSortDropdown(!showSortDropdown)}
+              className={`flex items-center justify-between gap-2 px-4 h-full w-[180px] border rounded-xl text-sm font-medium transition-all ${sortOrder !== 'newest' ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'border-[#e2e8f0] text-[#64748b] hover:border-primary bg-white'}`}
+            >
+              <span className="truncate">
+                {sortOrder === 'newest' ? 'Mới nhất' : 
+                 sortOrder === 'oldest' ? 'Cũ nhất' : 
+                 sortOrder === 'highest' ? 'Giá trị cao nhất' : 'Giá trị thấp nhất'}
+              </span>
+              <FiChevronDown size={14} className={`transition-transform flex-shrink-0 ${showSortDropdown ? 'rotate-180' : ''}`} />
+            </button>
+            {showSortDropdown && (
+              <div className="absolute top-full left-0 mt-2 w-full bg-white border border-border rounded-xl shadow-xl z-20 overflow-hidden animate-fade-in">
+                <div onClick={() => { setSortOrder('newest'); setShowSortDropdown(false); }} className={`px-4 py-2.5 text-sm hover:bg-bg-gray cursor-pointer border-b border-border ${sortOrder === 'newest' ? 'text-primary bg-primary/5 font-semibold' : 'text-text-gray'}`}>Mới nhất</div>
+                <div onClick={() => { setSortOrder('oldest'); setShowSortDropdown(false); }} className={`px-4 py-2.5 text-sm hover:bg-bg-gray cursor-pointer ${sortOrder === 'oldest' ? 'text-primary bg-primary/5 font-semibold' : 'text-text-gray'}`}>Cũ nhất</div>
+                <div onClick={() => { setSortOrder('highest'); setShowSortDropdown(false); }} className={`px-4 py-2.5 text-sm hover:bg-bg-gray cursor-pointer ${sortOrder === 'highest' ? 'text-primary bg-primary/5 font-semibold' : 'text-text-gray'}`}>Giá trị cao nhất</div>
+                <div onClick={() => { setSortOrder('lowest'); setShowSortDropdown(false); }} className={`px-4 py-2.5 text-sm hover:bg-bg-gray cursor-pointer ${sortOrder === 'lowest' ? 'text-primary bg-primary/5 font-semibold' : 'text-text-gray'}`}>Giá trị thấp nhất</div>
+              </div>
+            )}
+          </div>
+
+          <div className="w-24 flex-shrink-0 flex items-center h-full">
+            {(search || statusFilter !== 'All' || sortOrder !== 'newest') && (
+              <button
+                onClick={() => {
+                  setSearch('');
+                  setStatusFilter('All');
+                  setSortOrder('newest');
+                }}
+                className="text-xs font-bold text-accent hover:text-accent-dark transition-colors px-2 whitespace-nowrap"
+              >
+                Xóa bộ lọc
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -412,15 +413,15 @@ const AdminOrders = () => {
                 <div className="w-full max-w-sm space-y-3 bg-bg-gray/30 p-6 rounded-2xl border border-border">
                   <div className="flex justify-between text-sm">
                     <span className="text-text-gray">Tạm tính:</span>
-                    <span className="font-medium text-text-dark">{formatPrice(selectedOrder.totalAmount)}</span>
+                    <span className="font-medium text-text-dark">{formatPrice(selectedOrder.totalAmount + (selectedOrder.discountAmount || 0) - (selectedOrder.shippingFee || 0))}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-text-gray">Phí vận chuyển:</span>
-                    <span className="font-medium text-text-dark">+{formatPrice(0)}</span>
+                    <span className="font-medium text-text-dark">+{formatPrice(selectedOrder.shippingFee || 0)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-text-gray">Giảm giá:</span>
-                    <span className="font-medium text-accent">-{formatPrice(0)}</span>
+                    <span className="text-text-gray">Giảm giá {selectedOrder.promoCode ? `(${selectedOrder.promoCode})` : ''}:</span>
+                    <span className="font-medium text-accent">-{formatPrice(selectedOrder.discountAmount || 0)}</span>
                   </div>
                   <div className="pt-3 border-t border-border flex justify-between items-center">
                     <span className="font-bold text-text-dark">Tổng cộng:</span>

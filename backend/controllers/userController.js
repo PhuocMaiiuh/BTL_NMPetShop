@@ -1,4 +1,6 @@
+const mongoose = require('mongoose');
 const User = require('../models/User');
+const Order = require('../models/Order');
 
 const getUsers = async (req, res, next) => {
   try {
@@ -19,8 +21,21 @@ const getUsers = async (req, res, next) => {
       User.countDocuments(query)
     ]);
 
+    // Enhance users with order statistics
+    const enhancedUsers = await Promise.all(users.map(async (u) => {
+      const stats = await Order.aggregate([
+        { $match: { user: new mongoose.Types.ObjectId(u._id), status: 'Delivered' } },
+        { $group: { _id: null, count: { $sum: 1 }, total: { $sum: '$totalAmount' } } }
+      ]);
+      return {
+        ...u,
+        orderCount: stats[0]?.count || 0,
+        totalSpent: stats[0]?.total || 0
+      };
+    }));
+
     res.json({
-      users,
+      users: enhancedUsers,
       total,
       page: Number(page),
       totalPages: Math.ceil(total / Number(limit))
@@ -52,8 +67,33 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
+const loginUser = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ error: 'Email hoặc mật khẩu không chính xác' });
+    }
+
+    // Check password (simple comparison for now as per DB state)
+    if (user.password !== password) {
+      return res.status(401).json({ error: 'Email hoặc mật khẩu không chính xác' });
+    }
+
+    if (user.status === 'locked') {
+      return res.status(403).json({ error: 'Tài khoản của bạn đã bị khóa' });
+    }
+
+    const { password: _, ...userData } = user.toObject();
+    res.json(userData);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getUsers,
   toggleUserStatus,
-  deleteUser
+  deleteUser,
+  loginUser
 };

@@ -78,7 +78,7 @@ const getStats = async (req, res, next) => {
       ]),
       Order.countDocuments({ status: 'Pending' }),
       Product.countDocuments(),
-      User.countDocuments({ role: 'customer' })
+      User.countDocuments({ role: 'user' })
     ]);
 
     res.json({
@@ -93,10 +93,41 @@ const getStats = async (req, res, next) => {
   }
 };
 
+const getUserOrders = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const orders = await Order.find({ user: userId }).sort('-createdAt').lean();
+    res.json(orders);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const createOrder = async (req, res, next) => {
+  try {
+    const order = await Order.create(req.body);
+    
+    // Increment Promotion usedCount if promoCode is present
+    if (req.body.promoCode) {
+      const Promotion = require('../models/Promotion');
+      await Promotion.findOneAndUpdate(
+        { code: { $regex: new RegExp(`^${req.body.promoCode}$`, 'i') } },
+        { $inc: { usedCount: 1 } }
+      );
+    }
+
+    res.status(201).json(order);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getOrders,
   getOrderById,
   updateOrderStatus,
   deleteOrder,
-  getStats
+  getStats,
+  getUserOrders,
+  createOrder
 };

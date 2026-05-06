@@ -16,6 +16,8 @@ export const CartProvider = ({ children }) => {
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
+  const [selectedPromo, setSelectedPromo] = useState(null);
+
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cartItems));
   }, [cartItems]);
@@ -44,6 +46,11 @@ export const CartProvider = ({ children }) => {
     setCartItems((prevItems) => prevItems.filter((item) => String(item.id) !== String(id)));
   };
 
+  const clearCart = () => {
+    setCartItems([]);
+    setSelectedPromo(null);
+  };
+
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
   const cartSubtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
 
@@ -54,8 +61,11 @@ export const CartProvider = ({ children }) => {
         addToCart,
         updateQuantity,
         removeFromCart,
+        clearCart,
         cartCount,
         cartSubtotal,
+        selectedPromo,
+        setSelectedPromo
       }}
     >
       {children}

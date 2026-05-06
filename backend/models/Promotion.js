@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 
 const promotionSchema = new mongoose.Schema({
   code: { type: String, unique: true, required: true },
-  title: { type: String, required: true },
-  discountType: { type: String, enum: ['percentage', 'fixed'], default: 'percentage' },
+  title: { type: String },
+  discountType: { type: String, enum: ['percentage', 'fixed', 'free_shipping'], default: 'percentage' },
   discountValue: { type: Number, required: true },
   minOrderValue: { type: Number, default: 0 },
   maxDiscountAmount: { type: Number },
@@ -12,6 +12,7 @@ const promotionSchema = new mongoose.Schema({
   usageLimit: { type: Number },
   usedCount: { type: Number, default: 0 },
   status: { type: String, enum: ['active', 'expired', 'disabled'], default: 'active' },
+  category: { type: String, default: 'Toàn sàn' },
   description: { type: String },
 }, { timestamps: true });
 

@@ -23,7 +23,7 @@ const AdminSidebar = () => {
   ];
 
   return (
-    <aside className="w-64 bg-admin-sidebar min-h-screen text-white flex flex-col">
+    <aside className="w-64 bg-admin-sidebar h-screen text-white flex flex-col shrink-0">
       {/* Logo */}
       <div className="p-6 border-b border-white/10 flex items-center gap-3">
         <div className="bg-white p-1.5 rounded-lg shrink-0">

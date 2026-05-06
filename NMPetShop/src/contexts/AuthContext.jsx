@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from 'react';
+import { loginApi } from '../services/userApi';
 
 // Mock users database
 const MOCK_USERS = [
@@ -39,20 +40,28 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('nm_user');
-    return saved ? JSON.parse(saved) : null;
+    if (!saved) return null;
+    const userData = JSON.parse(saved);
+    return {
+      ...userData,
+      name: userData.fullName || userData.name || 'Người dùng'
+    };
   });
 
-  const login = (email, password) => {
-    const found = MOCK_USERS.find(
-      (u) => u.email === email && u.password === password
-    );
-    if (found) {
-      const { password: _, ...userData } = found;
-      setUser(userData);
-      localStorage.setItem('nm_user', JSON.stringify(userData));
-      return { success: true, user: userData };
+  const login = async (email, password) => {
+    try {
+      const userData = await loginApi(email, password);
+      // Normalize user data: ensure both name and fullName exist
+      const normalizedUser = {
+        ...userData,
+        name: userData.fullName || userData.name || 'Người dùng'
+      };
+      setUser(normalizedUser);
+      localStorage.setItem('nm_user', JSON.stringify(normalizedUser));
+      return { success: true, user: normalizedUser };
+    } catch (error) {
+      return { success: false, message: error.message };
     }
-    return { success: false, message: 'Email hoặc mật khẩu không chính xác' };
   };
 
   const logout = () => {

@@ -52,6 +52,7 @@ const ProductListPage = () => {
   const [searchParams] = useSearchParams();
   const categoryParam = searchParams.get('category');
   const filterParam   = searchParams.get('filter');
+  const searchParam   = searchParams.get('search');
   const navigate      = useNavigate();
 
   // ── Filter state ──
@@ -76,8 +77,8 @@ const ProductListPage = () => {
   const [availableBrands, setAvailableBrands] = useState([]);
 
   useEffect(() => {
-    if (!categoryParam && !filterParam) navigate('/');
-  }, [categoryParam, filterParam, navigate]);
+    if (!categoryParam && !filterParam && !searchParam) navigate('/');
+  }, [categoryParam, filterParam, searchParam, navigate]);
 
   // Reset on route change
   useEffect(() => {
@@ -88,17 +89,17 @@ const ProductListPage = () => {
     setSortBy('');
     setShowAllCats(false);
     setShowAllBrands(false);
-  }, [categoryParam, filterParam]);
+  }, [categoryParam, filterParam, searchParam]);
 
   // Fetch sidebar meta (categories + brands)
   useEffect(() => {
-    fetchProductMeta({ category: categoryParam, filter: filterParam })
+    fetchProductMeta({ category: categoryParam, filter: filterParam, search: searchParam })
       .then(({ categories, brands }) => {
         setAvailableCats(categories);
         setAvailableBrands(brands);
       })
       .catch(() => {});
-  }, [categoryParam, filterParam]);
+  }, [categoryParam, filterParam, searchParam]);
 
   // Compute combined price range from selected checkboxes
   const { priceMin, priceMax } = useMemo(() => {
@@ -119,6 +120,7 @@ const ProductListPage = () => {
       const data = await fetchProducts({
         category: categoryParam,
         filter: filterParam,
+        search: searchParam,
         subCategories: selectedCategories,
         brands: selectedBrands,
         priceMin,
@@ -135,7 +137,7 @@ const ProductListPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [categoryParam, filterParam, selectedCategories, selectedBrands, priceMin, priceMax, currentPage, sortBy]);
+  }, [categoryParam, filterParam, searchParam, selectedCategories, selectedBrands, priceMin, priceMax, currentPage, sortBy]);
 
   useEffect(() => { loadProducts(); }, [loadProducts]);
 
@@ -183,6 +185,10 @@ const ProductListPage = () => {
       'Thức ăn hạt',
       'Pate & Đồ hộp',
       'Sữa tắm & Vệ sinh',
+      'Phụ kiện',
+      'Đồ chơi',
+      'Chăm sóc khác',
+      // Sub-categories for accessories/others
       'Vòng cổ & Dây dắt',
       'Bát ăn & Bình nước',
       'Giường nệm & Chuồng',
@@ -195,15 +201,16 @@ const ProductListPage = () => {
       'Thuốc & Vitamin',
       'Dụng cụ cắt tỉa',
       'Vệ sinh & Khử mùi',
-      'Chăm sóc & Y tế',
-      'Phụ kiện',
-      'Đồ chơi',
-      'Chăm sóc khác'
+      'Chăm sóc & Y tế'
     ];
 
     const suffix = SUFFIX_MAP[categoryParam];
     let cats = availableCats;
-    if (suffix) {
+    if (categoryParam === 'suc-khoe') {
+      // Sức khỏe shows the 4 main sub-cats regardless of species
+      const HEALTH_CATS = ['Thuốc & Vitamin', 'Dụng cụ cắt tỉa', 'Vệ sinh & Khử mùi', 'Chăm sóc & Y tế'];
+      cats = availableCats.filter(cat => HEALTH_CATS.some(hc => cat.includes(hc)));
+    } else if (suffix) {
       cats = availableCats.filter(cat => cat.includes(suffix));
     }
 
@@ -241,7 +248,11 @@ const ProductListPage = () => {
         <Link to="/" className="hover:text-primary">Trang chủ</Link>
         <span>/</span>
         <span className="text-text-dark font-medium">
-          {filterParam === 'top-selling' ? 'Top 10 Sản phẩm bán chạy' : breadcrumbLabels[categoryParam] || ''}
+          {searchParam 
+            ? `Kết quả tìm kiếm cho "${searchParam}"` 
+            : filterParam === 'top-selling' 
+              ? 'Top 10 Sản phẩm bán chạy' 
+              : breadcrumbLabels[categoryParam] || ''}
         </span>
       </nav>
 
@@ -261,14 +272,39 @@ const ProductListPage = () => {
                 onClick={clearAll}
                 bold
               />
-              {visibleCats.map(cat => (
-                <FilterCheckbox 
-                  key={cat} 
-                  label={cat.replace(/\s*\(.*?\)$/, '')} 
-                  checked={selectedCategories.includes(cat)} 
-                  onClick={() => handleCatClick(cat)} 
-                />
-              ))}
+              {(() => {
+                // Group cats by base name (without suffix)
+                const grouped = {};
+                visibleCats.forEach(cat => {
+                  const base = cat.replace(/\s*\(.*?\)$/, '');
+                  if (!grouped[base]) grouped[base] = [];
+                  grouped[base].push(cat);
+                });
+
+                return Object.entries(grouped).map(([base, fullCats]) => {
+                  const isChecked = fullCats.every(cat => selectedCategories.includes(cat));
+                  const isAnyChecked = fullCats.some(cat => selectedCategories.includes(cat));
+
+                  return (
+                    <FilterCheckbox 
+                      key={base} 
+                      label={base} 
+                      checked={isAnyChecked} 
+                      onClick={() => {
+                        setSelectedCategories(prev => {
+                          const otherCats = prev.filter(c => !fullCats.includes(c));
+                          if (isAnyChecked) {
+                            return otherCats;
+                          } else {
+                            return [...otherCats, ...fullCats];
+                          }
+                        });
+                        setCurrentPage(1);
+                      }} 
+                    />
+                  );
+                });
+              })()}
             </div>
           </div>
 

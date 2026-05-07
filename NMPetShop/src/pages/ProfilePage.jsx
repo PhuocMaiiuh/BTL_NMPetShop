@@ -64,7 +64,7 @@ const ProfilePage = () => {
 
   const formatPrice = (p) => new Intl.NumberFormat('vi-VN').format(p) + 'đ';
 
-  const handleAvatarChange = (e) => {
+  const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
@@ -75,9 +75,16 @@ const ProfilePage = () => {
       addToast('Kích thước ảnh không được vượt quá 5MB', 'error');
       return;
     }
+    
+    // In a real app, you'd upload to a storage service and get a URL
+    // For now, we'll keep using the blob URL or base64
     const url = URL.createObjectURL(file);
-    updateUser({ avatar: url });
-    addToast('Cập nhật ảnh đại diện thành công!', 'success');
+    try {
+      await updateUser({ avatar: url });
+      addToast('Cập nhật ảnh đại diện thành công!', 'success');
+    } catch (err) {
+      addToast(err.message, 'error');
+    }
   };
 
   const startEditing = () => {
@@ -109,17 +116,30 @@ const ProfilePage = () => {
     return e;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const errs = validateEdit(editData);
     if (Object.keys(errs).length > 0) {
       setFieldErrors(errs);
       return;
     }
-    updateUser(editData);
-    setIsEditing(false);
-    setEditData({});
-    setFieldErrors({});
-    addToast('Cập nhật thông tin thành công!', 'success');
+    
+    try {
+      await updateUser(editData);
+      setIsEditing(false);
+      setEditData({});
+      setFieldErrors({});
+      addToast('Cập nhật thông tin thành công!', 'success');
+    } catch (err) {
+      // Handle backend errors (e.g. Email already exists)
+      const message = err.message;
+      if (message.toLowerCase().includes('email')) {
+        setFieldErrors({ ...fieldErrors, email: message });
+      } else if (message.toLowerCase().includes('số điện thoại') || message.toLowerCase().includes('phone')) {
+        setFieldErrors({ ...fieldErrors, phone: message });
+      } else {
+        addToast(message, 'error');
+      }
+    }
   };
 
   const handleFieldChange = (e) => {

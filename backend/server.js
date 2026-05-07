@@ -6,6 +6,7 @@ const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const userRoutes = require('./routes/userRoutes');
 const promotionRoutes = require('./routes/promotionRoutes');
+const serviceRoutes = require('./routes/serviceRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app  = express();
@@ -22,6 +23,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/promotions', promotionRoutes);
+app.use('/api/services', serviceRoutes);
 
 // 404 handler (unknown routes)
 app.use((req, res) => {

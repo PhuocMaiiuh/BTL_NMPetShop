@@ -1,140 +1,112 @@
 const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const Product = require('../models/Product');
 const User = require('../models/User');
-const Order = require('../models/Order');
-const Promotion = require('../models/Promotion');
 
-const MONGO_URI = 'mongodb://localhost:27017/nmpetshop';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/nm_petshop';
 const PRODUCTS_DATA_PATH = path.join(__dirname, '../../NMPetShop/src/data/petmall_products.json');
 
-const CATEGORY_STRUCTURE = {
-  cho: { suffix: '(Sản phẩm cho Chó)', items: ['Thức ăn hạt', 'Pate & Đồ hộp', 'Sữa tắm & Vệ sinh', 'Phụ kiện', 'Đồ chơi', 'Chăm sóc khác'] },
-  meo: { suffix: '(Sản phẩm cho Mèo)', items: ['Thức ăn hạt', 'Pate & Đồ hộp', 'Sữa tắm & Vệ sinh', 'Phụ kiện', 'Đồ chơi', 'Chăm sóc khác'] },
-  'phu-kien': { suffix: '(Phụ kiện)', items: ['Vòng cổ & Dây dắt', 'Bát ăn & Bình nước', 'Giường nệm & Chuồng', 'Túi vận chuyển & Lồng', 'Phụ kiện chung'] },
-  'do-choi': { suffix: '(Đồ chơi)', items: ['Đồ chơi nhai gặm', 'Cần câu & Bóng', 'Bàn cào móng', 'Đồ chơi chung'] },
-  'suc-khoe': { suffix: '(Chăm sóc sức khỏe)', items: ['Thuốc & Vitamin', 'Dụng cụ cắt tỉa', 'Vệ sinh & Khử mùi', 'Chăm sóc & Y tế'] }
-};
+const reasonableClassify = (p) => {
+  const combinedText = `${p.name} ${p.category || ''}`.toLowerCase();
 
-const reasonableClassify = (p, index) => {
-  const name = p.name.toLowerCase();
-  const originalCat = (p.category || '').toLowerCase();
+  // 1. TÌM GIỐNG THÚ CƯNG (Đuôi bộ lọc)
+  const isDog = combinedText.match(/chó|dog|puppy|corgi|poodle|husky|shiba|pedigree|ganador|smartheart|bowwow|pug/g);
+  const isCat = combinedText.match(/mèo|cat|kitten|me-o|whiskas|ciao|kitcat|minino|felix|sheba|churu|nekko|snappy tom/g);
 
-  // 1. HEALTH CARE (Specialized Keywords)
-  if (name.includes('thuốc') || name.includes('vitamin') || name.includes('canxi') || name.includes('men tiêu hóa') || name.includes('biotin') || name.includes('omega') || originalCat.includes('thuốc')) return `Thuốc & Vitamin (Chăm sóc sức khỏe)`;
-  if (name.includes('tông đơ') || name.includes('kềm') || name.includes('kéo') || name.includes('lược') || name.includes('bàn chải') || originalCat.includes('cắt tỉa')) return `Dụng cụ cắt tỉa (Chăm sóc sức khỏe)`;
-  if (name.includes('xịt') || name.includes('khử mùi') || name.includes('vệ sinh chuồng') || name.includes('bỉm') || name.includes('tã')) return `Vệ sinh & Khử mùi (Chăm sóc sức khỏe)`;
-  if (name.includes('ve rận') || name.includes('ghẻ') || name.includes('nấm') || name.includes('nhỏ tai') || name.includes('nhỏ mắt') || name.includes('vòng loa')) return `Chăm sóc & Y tế (Chăm sóc sức khỏe)`;
-
-  // 2. TOYS (General)
-  if (name.includes('bàn cào') || name.includes('cào móng') || name.includes('trụ cào')) return `Bàn cào móng (Đồ chơi)`;
-  if (name.includes('cần câu') || (name.includes('bóng') && !name.includes('chó'))) return `Cần câu & Bóng (Đồ chơi)`;
-  if (name.includes('nhai') || name.includes('gặm') || name.includes('xương gặm')) return `Đồ chơi nhai gặm (Đồ chơi)`;
-
-  // 3. ACCESSORIES (General)
-  if (name.includes('bát') || name.includes('chén') || name.includes('bình nước') || name.includes('máy lọc nước')) return `Bát ăn & Bình nước (Phụ kiện)`;
-  if (name.includes('túi') || name.includes('balo') || name.includes('lồng') || name.includes('địu')) return `Túi vận chuyển & Lồng (Phụ kiện)`;
-  if (name.includes('nệm') || name.includes('chuồng') || name.includes('nhà cho') || name.includes('thảm nằm')) return `Giường nệm & Chuồng (Phụ kiện)`;
-  if (name.includes('vòng cổ') || name.includes('dây dắt') || name.includes('yếm') || name.includes('rọ mõm') || name.includes('xích')) return `Vòng cổ & Dây dắt (Phụ kiện)`;
-
-  // 4. SPECIES SPECIFIC (Food & Basic Care)
-  const isDog = originalCat.includes('chó') || name.includes('chó') || name.includes('puppy') || name.includes('pedigree') || name.includes('ganador') || name.includes('smartheart');
-  const isCat = originalCat.includes('mèo') || name.includes('mèo') || name.includes('kitten') || name.includes('whiskas') || name.includes('me-o') || name.includes('ciao') || name.includes('cát vệ sinh');
-
-  if (isCat) {
-    if (name.includes('hạt') || name.includes('royal canin') || originalCat.includes('hạt')) return `Thức ăn hạt (Sản phẩm cho Mèo)`;
-    if (name.includes('pate') || name.includes('súp') || name.includes('thanh thưởng') || name.includes('ciao') || name.includes('ướt') || name.includes('snack')) return `Pate & Đồ hộp (Sản phẩm cho Mèo)`;
-    if (name.includes('cát') || name.includes('tắm') || name.includes('litter')) return `Sữa tắm & Vệ sinh (Sản phẩm cho Mèo)`;
-    if (name.includes('đồ chơi') || name.includes('bóng') || name.includes('chuông')) return `Đồ chơi (Sản phẩm cho Mèo)`;
-    return `Phụ kiện (Sản phẩm cho Mèo)`;
+  let speciesSuffix = '';
+  if (isDog && !isCat) {
+    speciesSuffix = ' (Sản phẩm cho Chó)';
+  } else if (isCat && !isDog) {
+    speciesSuffix = ' (Sản phẩm cho Mèo)';
+  } else {
+    // TRIỆT ĐỂ: Các món dùng chung (như bát ăn, kìm cắt móng) sẽ được gắn CẢ 2 HẬU TỐ.
+    // Điều này giúp sản phẩm hiển thị hoàn hảo ở cả 2 tab "Cho Chó" và "Cho Mèo" trên UI.
+    speciesSuffix = ' (Sản phẩm cho Chó) (Sản phẩm cho Mèo)';
   }
 
-  if (isDog) {
-    if (name.includes('hạt') || name.includes('thức ăn') || originalCat.includes('hạt')) return `Thức ăn hạt (Sản phẩm cho Chó)`;
-    if (name.includes('pate') || name.includes('hộp') || name.includes('ướt') || name.includes('gravy')) return `Pate & Đồ hộp (Sản phẩm cho Chó)`;
-    if (name.includes('tắm') || name.includes('xà bông') || name.includes('khử mùi')) return `Sữa tắm & Vệ sinh (Sản phẩm cho Chó)`;
-    if (name.includes('đồ chơi') || name.includes('bóng')) return `Đồ chơi (Sản phẩm cho Chó)`;
-    return `Phụ kiện (Sản phẩm cho Chó)`;
-  }
+  // 2. LỚP CHẶN 1: DỤNG CỤ & PHỤ KIỆN (Bắt buộc chứa chữ "(Phụ kiện)")
+  // Phải đặt trên cùng để chặn các từ khóa gây nhiễu phía sau (VD: "Muỗng xúc thức ăn/hộp")
+  if (combinedText.match(/vòng cổ|dây dắt|rọ mõm|yếm|xích/g)) return `Vòng cổ & Dây dắt (Phụ kiện)${speciesSuffix}`;
+  if (combinedText.match(/bát|chén|bình|máy lọc|muỗng|thìa|xẻng|khui|nắp đậy|cốc đong|kẹp|núm ti/g)) return `Dụng cụ ăn uống & Vệ sinh (Phụ kiện)${speciesSuffix}`;
+  if (combinedText.match(/nệm|giường|chuồng|nhà cho|thảm|ổ nằm|lồng|võng/g)) return `Giường nệm & Chuồng (Phụ kiện)${speciesSuffix}`;
+  if (combinedText.match(/túi|balo|địu|vận chuyển|túi xách/g)) return `Túi vận chuyển & Lồng (Phụ kiện)${speciesSuffix}`;
+  if (combinedText.match(/áo|quần|nơ|kẹp tóc|mắt kính|mũ|nón/g)) return `Quần áo & Thời trang (Phụ kiện)${speciesSuffix}`;
 
-  // Final Fallback
-  return `Phụ kiện chung (Phụ kiện)`;
+  // 3. LỚP CHẶN 2: ĐỒ CHƠI (Bắt buộc chứa chữ "(Đồ chơi)")
+  if (combinedText.match(/bàn cào|cào móng|trụ cào|cat tree|nhà cây/g)) return `Bàn cào móng (Đồ chơi)${speciesSuffix}`;
+  if (combinedText.match(/cần câu|chuông|bóng|lật đật|đèn laser|catnip|bạc hà|đồ chơi/g)) return `Đồ chơi chung (Đồ chơi)${speciesSuffix}`;
+
+  // 4. LỚP CHẶN 3: SỨC KHỎE & Y TẾ (Tiền tố bắt buộc khớp 100% với Controller)
+  if (combinedText.match(/tông đơ|kềm|kéo|lược|bàn chải lông|kìm|gỡ rối|máy sấy|găng tay/g)) return `Dụng cụ cắt tỉa${speciesSuffix}`;
+  if (combinedText.match(/cát vệ sinh|litter|catsbest|đậu nành|xịt|khử mùi|bỉm|tã|khay|chậu|tấm lót|pads|khăn ướt|túi đựng phân|lăn lông/g)) return `Vệ sinh & Khử mùi${speciesSuffix}`;
+  if (combinedText.match(/thuốc|vitamin|canxi|men tiêu hóa|biotin|gel|bổ sung|tẩy giun|ve|rận|nhỏ gáy|nấm|viêm|nhỏ mắt|nhỏ tai/g)) return `Thuốc & Vitamin${speciesSuffix}`;
+  if (combinedText.match(/sữa tắm|shampoo|xà bông|vòng loa|bông tai|kem đánh răng|bàn chải đánh|nước súc miệng/g)) return `Chăm sóc & Y tế${speciesSuffix}`;
+
+  // 5. LỚP CHẶN 4: THỨC ĂN & SNACK (Sau khi đã loại hết bát đĩa, muỗng xẻng, thuốc men)
+  if (combinedText.match(/thưởng|snack|treat|ciao|xương|gặm|nhai|tendon|stick|slice|jerky|đùi gà|ức gà|cá viên|bánh|phô mai|súp thưởng/g)) return `Snack & Bánh thưởng${speciesSuffix}`;
+  if (combinedText.match(/pate|súp|ướt|gravy|hộp|lon|pouch|thịt xiên/g)) return `Pate & Thức ăn ướt${speciesSuffix}`;
+  if (combinedText.match(/sữa bột|sữa cho|sữa dê/g)) return `Sữa bột & Thay thế${speciesSuffix}`;
+  if (combinedText.match(/hạt|kibble|thức ăn khô|royal canin|nutrience|thức ăn/g)) return `Thức ăn hạt${speciesSuffix}`;
+
+  // 6. GOM RÁC CÒN LẠI
+  return `Sản phẩm khác (Phụ kiện)${speciesSuffix}`;
 };
 
 const seed = async () => {
   try {
     await mongoose.connect(MONGO_URI);
-    console.log('Connected to MongoDB for REFINED logic restoration...');
+    console.log('🔗 Connected to MongoDB. Đang tiến hành phân loại CHẶN NHIỀU LỚP...');
 
     const productsData = JSON.parse(fs.readFileSync(PRODUCTS_DATA_PATH, 'utf8'));
 
-    // UI Slots Safety
-    const allRequiredCats = [];
-    Object.keys(CATEGORY_STRUCTURE).forEach(gk => {
-      const g = CATEGORY_STRUCTURE[gk];
-      g.items.forEach(item => { allRequiredCats.push(`${item} ${g.suffix}`); });
+    const classified = productsData.map((p, i) => {
+      const baseProduct = { ...p, category: reasonableClassify(p) };
+      baseProduct.active = true;
+      return baseProduct;
     });
 
-    console.log('Applying refined classification to 2116 products...');
-    const classified = productsData.map((p, i) => {
-      if (i < allRequiredCats.length) return { ...p, category: allRequiredCats[i] };
-      return { ...p, category: reasonableClassify(p, i) };
+    // Sắp xếp logic hiển thị: Category -> Brand -> Name
+    classified.sort((a, b) => {
+      const catA = a.category || "";
+      const catB = b.category || "";
+      if (catA !== catB) return catA.localeCompare(catB);
+      const brandA = a.brand || '';
+      const brandB = b.brand || '';
+      if (brandA !== brandB) return brandA.localeCompare(brandB);
+      return (a.name || "").localeCompare(b.name || "");
+    });
+
+    // Reset lại ID cho gọn gàng
+    classified.forEach((p, i) => {
+      p.id = i + 1;
     });
 
     await Product.deleteMany({});
+    console.log('🗑️ Đã dọn dẹp các sản phẩm lộn xộn cũ.');
+
     await Product.insertMany(classified);
-    console.log('✅ Products re-classified successfully.');
+    console.log('✅ Đã phân loại triệt để và lưu thành công!');
 
-    // Users, Orders, Promotions (Keep intact with new linked IDs)
-    // I'll skip re-seeding users/orders to preserve the random dates and statuses we just set,
-    // unless the user specifically wants a full wipe. 
-    // BUT since I need to ensure they match the NEW product set (though IDs are likely same),
-    // I'll re-seed them to be safe but keep the logic for dates/statuses.
-
-    const VIETNAMESE_NAMES = [
-      'Nguyễn Minh Anh', 'Trần Hoàng Nam', 'Lê Thị Tuyết', 'Phạm Minh Đức', 'Đặng Thu Thảo',
-      'Vũ Văn Hùng', 'Bùi Thị Mai', 'Ngô Quốc Bảo', 'Lý Gia Hân', 'Hoàng Kim Chi',
-      'Đỗ Mạnh Cường', 'Trương Ngọc Ánh', 'Phan Thanh Tùng', 'Võ Thị Sáu', 'Nguyễn Hữu Thắng',
-      'Trần Quang Đăng', 'Lê Minh Tâm', 'Nguyễn Thị Diệu', 'Phạm Xuân Bắc', 'Lương Thế Vinh'
-    ];
-
-    await User.deleteMany({});
-    const customers = VIETNAMESE_NAMES.map((name, i) => ({
-      id: i + 101, fullName: name, email: `user${i + 1}@example.com`, password: 'user123', role: 'user',
-      phone: `09${Math.floor(Math.random() * 90000000 + 10000000)}`, address: `${Math.floor(Math.random() * 500 + 1)} Đường Lê Lợi, TP. HCM`
-    }));
-    customers.push({ id: 1, fullName: 'Admin NM', email: 'admin@nmpetshop.com', password: 'admin123', role: 'admin' });
-    const savedUsers = await User.insertMany(customers);
-
-    await Order.deleteMany({});
-    const statuses = ['Pending', 'Confirmed', 'Shipping', 'Delivered', 'Cancelled'];
-    for (let i = 0; i < 100; i++) {
-      const userIndex = i % 20;
-      const user = savedUsers[userIndex];
-      const prod = classified[i % classified.length];
-      let status = i < 20 ? 'Delivered' : statuses[Math.floor(Math.random() * statuses.length)];
-      await Order.create({
-        orderId: `ORD-${Date.now()}-${i}`,
-        user: user._id,
-        customerName: user.fullName, email: user.email, phone: user.phone, shippingAddress: user.address || 'HCM',
-        items: [{ productId: prod.id, name: prod.name, price: prod.price, quantity: 1, image: prod.image }],
-        totalAmount: prod.price, status: status, paymentMethod: 'COD',
-        createdAt: new Date(Date.now() - Math.random() * 20 * 24 * 60 * 60 * 1000)
+    // Tạo Admin nếu chưa có
+    const adminEmail = 'admin@nmpetshop.com';
+    const existingAdmin = await User.findOne({ email: adminEmail });
+    if (!existingAdmin) {
+      await User.create({
+        id: 1,
+        fullName: 'Admin User',
+        email: adminEmail,
+        password: 'admin', 
+        role: 'admin',
+        active: true
       });
+      console.log('👤 Đã tạo tài khoản Admin.');
     }
 
-    await Promotion.deleteMany({});
-    await Promotion.insertMany([
-      { code: 'TET2026', title: 'Tết Nguyên Đán 2026', discountType: 'percentage', discountValue: 25, startDate: new Date('2026-01-20'), endDate: new Date('2026-02-15'), status: 'active', usageLimit: 500 },
-      { code: '30THANG4', title: 'Đại lễ 30/4 & 1/5', discountType: 'fixed', discountValue: 50000, startDate: new Date('2025-04-20'), endDate: new Date('2025-05-05'), status: 'expired' },
-      { code: 'HERUCCRO', title: 'Chào Hè Rực Rỡ', discountType: 'percentage', discountValue: 30, startDate: new Date('2026-06-01'), endDate: new Date('2026-08-31'), status: 'active' }
-    ]);
-
-    console.log('\n🌟 REFINED RESTORATION COMPLETE! 🌟');
     process.exit(0);
-  } catch (err) {
-    console.error('❌ Error:', err.message);
+  } catch (error) {
+    console.error('❌ Lỗi trong quá trình phân loại:', error);
     process.exit(1);
   }
 };

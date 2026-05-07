@@ -45,7 +45,10 @@ const buildQuery = (reqQuery) => {
         'suc-khoe': '(Chăm sóc sức khỏe)'
       };
       const suffix = SUFFIX_MAP[category];
-      if (suffix) {
+      if (category === 'suc-khoe') {
+        // Special case: Sức khỏe should include ALL health sub-categories regardless of species suffix
+        query.category = { $regex: 'Thuốc & Vitamin|Dụng cụ cắt tỉa|Vệ sinh & Khử mùi|Chăm sóc & Y tế', $options: 'i' };
+      } else if (suffix) {
         query.category = { $regex: suffix.replace('(', '\\(').replace(')', '\\)'), $options: 'i' };
       }
     } else {

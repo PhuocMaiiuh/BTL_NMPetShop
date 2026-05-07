@@ -91,9 +91,78 @@ const loginUser = async (req, res, next) => {
   }
 };
 
+const registerUser = async (req, res, next) => {
+  try {
+    const { fullName, email, password, phone } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email đã được sử dụng' });
+    }
+
+    const lastUser = await User.findOne().sort('-id');
+    const newId = lastUser ? (lastUser.id || 0) + 1 : 1;
+
+    const newUser = new User({
+      id: newId,
+      fullName,
+      email,
+      password,
+      phone,
+      role: 'user',
+      status: 'active'
+    });
+
+    await newUser.save();
+
+    const { password: _, ...userData } = newUser.toObject();
+    res.status(201).json(userData);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const updateProfile = async (req, res, next) => {
+  try {
+    const { id } = req.params; // Numeric ID
+    const { fullName, email, phone, birthday, address, avatar } = req.body;
+
+    // Check email uniqueness (excluding current user)
+    if (email) {
+      const existingEmail = await User.findOne({ email, id: { $ne: Number(id) } });
+      if (existingEmail) {
+        return res.status(400).json({ error: 'Email này đã được sử dụng bởi người dùng khác' });
+      }
+    }
+
+    // Check phone uniqueness (excluding current user)
+    if (phone) {
+      const existingPhone = await User.findOne({ phone, id: { $ne: Number(id) } });
+      if (existingPhone) {
+        return res.status(400).json({ error: 'Số điện thoại này đã được sử dụng bởi người dùng khác' });
+      }
+    }
+
+    const user = await User.findOneAndUpdate(
+      { id: Number(id) },
+      { fullName, email, phone, birthday, address, avatar },
+      { new: true, runValidators: true }
+    );
+
+    if (!user) return res.status(404).json({ error: 'Người dùng không tồn tại' });
+
+    const { password: _, ...userData } = user.toObject();
+    res.json(userData);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getUsers,
   toggleUserStatus,
   deleteUser,
-  loginUser
+  loginUser,
+  registerUser,
+  updateProfile
 };

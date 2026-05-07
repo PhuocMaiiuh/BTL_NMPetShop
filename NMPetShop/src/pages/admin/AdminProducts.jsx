@@ -4,8 +4,30 @@ import { fetchProducts, createProduct, updateProduct, deleteProduct, toggleProdu
 import Pagination from '../../components/admin/Pagination';
 
 const categoryGroups = [
-  { label: 'Sản phẩm cho Chó', suffix: '(Sản phẩm cho Chó)', subs: ['Thức ăn hạt (Sản phẩm cho Chó)', 'Pate & Đồ hộp (Sản phẩm cho Chó)', 'Sữa tắm & Vệ sinh (Sản phẩm cho Chó)', 'Phụ kiện (Sản phẩm cho Chó)', 'Đồ chơi (Sản phẩm cho Chó)', 'Chăm sóc khác (Sản phẩm cho Chó)'] },
-  { label: 'Sản phẩm cho Mèo', suffix: '(Sản phẩm cho Mèo)', subs: ['Thức ăn hạt (Sản phẩm cho Mèo)', 'Pate & Đồ hộp (Sản phẩm cho Mèo)', 'Sữa tắm & Vệ sinh (Sản phẩm cho Mèo)', 'Phụ kiện (Sản phẩm cho Mèo)', 'Đồ chơi (Sản phẩm cho Mèo)', 'Chăm sóc khác (Sản phẩm cho Mèo)'] },
+  { 
+    label: 'Sản phẩm cho Chó', 
+    suffix: '(Sản phẩm cho Chó)', 
+    subs: [
+      'Thức ăn hạt (Sản phẩm cho Chó)', 
+      'Pate & Đồ hộp (Sản phẩm cho Chó)', 
+      'Sữa tắm & Vệ sinh (Sản phẩm cho Chó)', 
+      'Phụ kiện (Sản phẩm cho Chó)', 
+      'Đồ chơi (Sản phẩm cho Chó)', 
+      'Chăm sóc khác (Sản phẩm cho Chó)'
+    ] 
+  },
+  { 
+    label: 'Sản phẩm cho Mèo', 
+    suffix: '(Sản phẩm cho Mèo)', 
+    subs: [
+      'Thức ăn hạt (Sản phẩm cho Mèo)', 
+      'Pate & Đồ hộp (Sản phẩm cho Mèo)', 
+      'Sữa tắm & Vệ sinh (Sản phẩm cho Mèo)', 
+      'Phụ kiện (Sản phẩm cho Mèo)', 
+      'Đồ chơi (Sản phẩm cho Mèo)', 
+      'Chăm sóc khác (Sản phẩm cho Mèo)'
+    ] 
+  },
   { label: 'Phụ kiện', suffix: '(Phụ kiện)', subs: ['Vòng cổ & Dây dắt (Phụ kiện)', 'Bát ăn & Bình nước (Phụ kiện)', 'Giường nệm & Chuồng (Phụ kiện)', 'Túi vận chuyển & Lồng (Phụ kiện)', 'Phụ kiện chung (Phụ kiện)'] },
   { label: 'Đồ chơi', suffix: '(Đồ chơi)', subs: ['Đồ chơi nhai gặm (Đồ chơi)', 'Cần câu & Bóng (Đồ chơi)', 'Bàn cào móng (Đồ chơi)', 'Đồ chơi chung (Đồ chơi)'] },
   { label: 'Chăm sóc sức khỏe', suffix: '(Chăm sóc sức khỏe)', subs: ['Thuốc & Vitamin (Chăm sóc sức khỏe)', 'Dụng cụ cắt tỉa (Chăm sóc sức khỏe)', 'Vệ sinh & Khử mùi (Chăm sóc sức khỏe)', 'Chăm sóc & Y tế (Chăm sóc sức khỏe)'] },

@@ -10,11 +10,14 @@ const AuthPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '', name: '', phone: '' });
   const [error, setError] = useState('');
-  const { login, isAuthenticated, isAdmin } = useAuth();
+  const [fieldErrors, setFieldErrors] = useState({});
+  const { login, register, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     setActiveTab(location.pathname === '/dang-ky' ? 'register' : 'login');
+    setError('');
+    setFieldErrors({});
   }, [location.pathname]);
 
   useEffect(() => {
@@ -23,9 +26,40 @@ const AuthPage = () => {
     }
   }, [isAuthenticated, isAdmin, navigate]);
 
+  const validateField = (name, value) => {
+    let error = '';
+    if (activeTab === 'register') {
+      if (name === 'name' && !value) error = 'Họ tên không được để trống';
+      if (name === 'email') {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!value) error = 'Email không được để trống';
+        else if (!emailRegex.test(value)) error = 'Email không đúng định dạng';
+      }
+      if (name === 'password') {
+        if (!value) error = 'Mật khẩu không được để trống';
+        else if (value.length < 6) error = 'Mật khẩu phải có ít nhất 6 ký tự';
+      }
+      if (name === 'confirmPassword') {
+        if (!value) error = 'Vui lòng xác nhận mật khẩu';
+        else if (value !== formData.password) error = 'Mật khẩu xác nhận không khớp';
+      }
+    }
+    return error;
+  };
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
     if (error) setError('');
+    if (fieldErrors[name]) {
+      setFieldErrors({ ...fieldErrors, [name]: '' });
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    const fieldError = validateField(name, value);
+    setFieldErrors({ ...fieldErrors, [name]: fieldError });
   };
 
   const handleLoginSubmit = async (e) => {
@@ -43,11 +77,42 @@ const AuthPage = () => {
     }
   };
 
-  const handleRegisterSubmit = (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    setActiveTab('login');
     setError('');
-    alert('Đăng ký thành công! Vui lòng đăng nhập.');
+
+    // Validate all fields
+    const newFieldErrors = {};
+    Object.keys(formData).forEach(key => {
+      const fieldError = validateField(key, formData[key]);
+      if (fieldError) newFieldErrors[key] = fieldError;
+    });
+
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
+      setError('Vui lòng kiểm tra lại thông tin đăng ký');
+      return;
+    }
+
+    try {
+      const result = await register({
+        fullName: formData.name,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone || ''
+      });
+
+      if (result.success) {
+        alert('Đăng ký thành công! Vui lòng đăng nhập.');
+        setFormData({ ...formData, password: '', confirmPassword: '' });
+        setActiveTab('login');
+        navigate('/dang-nhap');
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      setError('Đã có lỗi xảy ra trong quá trình đăng ký');
+    }
   };
 
   return (
@@ -163,7 +228,7 @@ const AuthPage = () => {
           </div>
 
           {/* Error message */}
-          {error && activeTab === 'login' && (
+          {error && (
             <div
               className="flex items-center gap-2 p-3 mb-4 rounded-xl text-sm"
               style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#ef4444' }}
@@ -308,14 +373,23 @@ const AuthPage = () => {
                     type="text"
                     value={formData.name}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     placeholder="Nhập họ và tên"
                     required
                     className="w-full pl-10 pr-4 py-3 rounded-xl text-sm transition-all duration-200"
-                    style={{ border: '1.5px solid #e5e7eb', outline: 'none', background: '#fafafa' }}
+                    style={{ 
+                      border: fieldErrors.name ? '1.5px solid #ef4444' : '1.5px solid #e5e7eb', 
+                      outline: 'none', 
+                      background: '#fafafa' 
+                    }}
                     onFocus={e => { e.currentTarget.style.borderColor = '#1a3c5e'; e.currentTarget.style.background = '#fff'; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.background = '#fafafa'; }}
                   />
                 </div>
+                {fieldErrors.name && (
+                  <p className="text-[11px] text-red-500 mt-1 ml-1 flex items-center gap-1">
+                    <FiAlertCircle size={10} /> {fieldErrors.name}
+                  </p>
+                )}
               </div>
 
               {/* Email */}
@@ -334,14 +408,23 @@ const AuthPage = () => {
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     placeholder="Nhập địa chỉ email"
                     required
                     className="w-full pl-10 pr-4 py-3 rounded-xl text-sm transition-all duration-200"
-                    style={{ border: '1.5px solid #e5e7eb', outline: 'none', background: '#fafafa' }}
+                    style={{ 
+                      border: fieldErrors.email ? '1.5px solid #ef4444' : '1.5px solid #e5e7eb', 
+                      outline: 'none', 
+                      background: '#fafafa' 
+                    }}
                     onFocus={e => { e.currentTarget.style.borderColor = '#1a3c5e'; e.currentTarget.style.background = '#fff'; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.background = '#fafafa'; }}
                   />
                 </div>
+                {fieldErrors.email && (
+                  <p className="text-[11px] text-red-500 mt-1 ml-1 flex items-center gap-1">
+                    <FiAlertCircle size={10} /> {fieldErrors.email}
+                  </p>
+                )}
               </div>
 
               {/* Password */}
@@ -360,12 +443,16 @@ const AuthPage = () => {
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     placeholder="Nhập mật khẩu"
                     required
                     className="w-full pl-10 pr-10 py-3 rounded-xl text-sm transition-all duration-200"
-                    style={{ border: '1.5px solid #e5e7eb', outline: 'none', background: '#fafafa' }}
+                    style={{ 
+                      border: fieldErrors.password ? '1.5px solid #ef4444' : '1.5px solid #e5e7eb', 
+                      outline: 'none', 
+                      background: '#fafafa' 
+                    }}
                     onFocus={e => { e.currentTarget.style.borderColor = '#1a3c5e'; e.currentTarget.style.background = '#fff'; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.background = '#fafafa'; }}
                   />
                   <button
                     type="button"
@@ -376,6 +463,11 @@ const AuthPage = () => {
                     {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                   </button>
                 </div>
+                {fieldErrors.password && (
+                  <p className="text-[11px] text-red-500 mt-1 ml-1 flex items-center gap-1">
+                    <FiAlertCircle size={10} /> {fieldErrors.password}
+                  </p>
+                )}
               </div>
 
               {/* Confirm password */}
@@ -394,12 +486,16 @@ const AuthPage = () => {
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     placeholder="Xác nhận mật khẩu"
                     required
                     className="w-full pl-10 pr-10 py-3 rounded-xl text-sm transition-all duration-200"
-                    style={{ border: '1.5px solid #e5e7eb', outline: 'none', background: '#fafafa' }}
+                    style={{ 
+                      border: fieldErrors.confirmPassword ? '1.5px solid #ef4444' : '1.5px solid #e5e7eb', 
+                      outline: 'none', 
+                      background: '#fafafa' 
+                    }}
                     onFocus={e => { e.currentTarget.style.borderColor = '#1a3c5e'; e.currentTarget.style.background = '#fff'; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.background = '#fafafa'; }}
                   />
                   <button
                     type="button"
@@ -410,6 +506,11 @@ const AuthPage = () => {
                     {showConfirmPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                   </button>
                 </div>
+                {fieldErrors.confirmPassword && (
+                  <p className="text-[11px] text-red-500 mt-1 ml-1 flex items-center gap-1">
+                    <FiAlertCircle size={10} /> {fieldErrors.confirmPassword}
+                  </p>
+                )}
               </div>
 
               {/* Terms */}

@@ -1,31 +1,7 @@
 import { createContext, useContext, useState } from 'react';
-import { loginApi } from '../services/userApi';
+import { loginApi, registerApi, updateProfileApi } from '../services/userApi';
 
-// Mock users database
-const MOCK_USERS = [
-  {
-    id: 1,
-    email: 'admin@nmpetshop.com',
-    password: 'admin123',
-    name: 'Admin NM',
-    role: 'admin',
-    phone: '0901234567',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face',
-  },
-  {
-    id: 2,
-    customerCode: 'KH26001',
-    email: 'user@nmpetshop.com',
-    password: 'user123',
-    name: 'Nguyễn Văn A',
-    role: 'user',
-    phone: '0987654321',
-    birthday: '15/08/1995',
-    address: '123 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh',
-    memberLevel: 'Thành viên Bạc',
-    avatar: '',
-  },
-];
+// ... (MOCK_USERS kept for reference if needed)
 
 const AuthContext = createContext(null);
 
@@ -64,22 +40,51 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const register = async (userData) => {
+    try {
+      const newUser = await registerApi(userData);
+      return { success: true, user: newUser };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('nm_user');
   };
 
-  const updateUser = (data) => {
-    const updatedUser = { ...user, ...data };
-    setUser(updatedUser);
-    localStorage.setItem('nm_user', JSON.stringify(updatedUser));
+  const updateUser = async (data) => {
+    if (!user) return { success: false, message: 'Not logged in' };
+    try {
+      // Map frontend fields to backend if necessary
+      const apiData = {
+        fullName: data.name || data.fullName,
+        email: data.email,
+        phone: data.phone,
+        birthday: data.birthday,
+        address: data.address,
+        avatar: data.avatar
+      };
+      
+      const updatedUser = await updateProfileApi(user.id, apiData);
+      const normalizedUser = {
+        ...updatedUser,
+        name: updatedUser.fullName || updatedUser.name || 'Người dùng'
+      };
+      setUser(normalizedUser);
+      localStorage.setItem('nm_user', JSON.stringify(normalizedUser));
+      return { success: true, user: normalizedUser };
+    } catch (error) {
+      throw error; // Let the component handle the error
+    }
   };
 
   const isAuthenticated = !!user;
   const isAdmin = user?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateUser, isAuthenticated, isAdmin }}>
+    <AuthContext.Provider value={{ user, login, register, logout, updateUser, isAuthenticated, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

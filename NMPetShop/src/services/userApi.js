@@ -20,6 +20,43 @@ export async function loginApi(email, password) {
 }
 
 /**
+ * Register user
+ * @param {Object} userData 
+ */
+export async function registerApi(userData) {
+  const res = await fetch(`${BASE}/users/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userData),
+  });
+  
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Đăng ký thất bại');
+  }
+  return data;
+}
+
+/**
+ * Update user profile
+ * @param {string|number} id 
+ * @param {Object} userData 
+ */
+export async function updateProfileApi(id, userData) {
+  const res = await fetch(`${BASE}/users/profile/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userData),
+  });
+  
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Cập nhật hồ sơ thất bại');
+  }
+  return data;
+}
+
+/**
  * Fetch all users (admin)
  */
 export async function fetchUsers({ search = '', role = '', page = 1, limit = 20 } = {}) {

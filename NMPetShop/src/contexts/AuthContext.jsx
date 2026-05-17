@@ -15,7 +15,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('nm_user');
+    const saved = sessionStorage.getItem('nm_user');
     if (!saved) return null;
     const userData = JSON.parse(saved);
     return {
@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
         name: userData.fullName || userData.name || 'Người dùng'
       };
       setUser(normalizedUser);
-      localStorage.setItem('nm_user', JSON.stringify(normalizedUser));
+      sessionStorage.setItem('nm_user', JSON.stringify(normalizedUser));
       return { success: true, user: normalizedUser };
     } catch (error) {
       return { success: false, message: error.message };
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('nm_user');
+    sessionStorage.removeItem('nm_user');
   };
 
   const updateUser = async (data) => {
@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }) => {
         name: updatedUser.fullName || updatedUser.name || 'Người dùng'
       };
       setUser(normalizedUser);
-      localStorage.setItem('nm_user', JSON.stringify(normalizedUser));
+      sessionStorage.setItem('nm_user', JSON.stringify(normalizedUser));
       return { success: true, user: normalizedUser };
     } catch (error) {
       throw error; // Let the component handle the error

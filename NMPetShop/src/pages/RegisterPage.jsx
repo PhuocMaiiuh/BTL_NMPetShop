@@ -1,12 +1,47 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
+import { useAuth } from '../contexts/AuthContext';
 
 const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', password: '', confirmPassword: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { register } = useAuth();
+  const navigate = useNavigate();
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    
+    if (!formData.fullName || !formData.email || !formData.password) {
+      setError('Vui lòng điền đầy đủ thông tin bắt buộc');
+      return;
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      setError('Mật khẩu xác nhận không khớp');
+      return;
+    }
+
+    setLoading(true);
+    const result = await register({
+      fullName: formData.fullName,
+      email: formData.email,
+      phone: formData.phone,
+      password: formData.password
+    });
+    setLoading(false);
+
+    if (result.success) {
+      navigate('/dang-nhap', { state: { message: 'Đăng ký thành công! Vui lòng đăng nhập.' } });
+    } else {
+      setError(result.message || 'Có lỗi xảy ra khi đăng ký');
+    }
+  };
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
@@ -20,7 +55,8 @@ const RegisterPage = () => {
             <p className="text-sm text-text-gray mt-1">Tạo tài khoản NM Pet Shop</p>
           </div>
 
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            {error && <div className="p-3 bg-red-50 text-red-500 rounded-lg text-sm">{error}</div>}
             <div>
               <label className="block text-sm font-medium text-text-dark mb-1.5">Họ và tên</label>
               <input name="fullName" value={formData.fullName} onChange={handleChange} className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:border-primary" placeholder="Nguyễn Văn A" />
@@ -44,7 +80,9 @@ const RegisterPage = () => {
               <label className="block text-sm font-medium text-text-dark mb-1.5">Xác nhận mật khẩu</label>
               <input name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:border-primary" placeholder="••••••••" />
             </div>
-            <button type="submit" className="w-full py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-colors">Đăng ký</button>
+            <button type="submit" disabled={loading} className="w-full py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-colors disabled:opacity-50">
+              {loading ? 'Đang đăng ký...' : 'Đăng ký'}
+            </button>
           </form>
 
           <p className="text-center text-sm text-text-gray mt-6">

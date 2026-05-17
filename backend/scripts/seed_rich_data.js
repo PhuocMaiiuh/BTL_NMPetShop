@@ -78,9 +78,12 @@ const seed = async () => {
       return (a.name || "").localeCompare(b.name || "");
     });
 
-    // Reset lại ID cho gọn gàng
+    // Reset lại ID cho gọn gàng và set isBestSelling cho 15 sản phẩm đầu tiên
     classified.forEach((p, i) => {
       p.id = i + 1;
+      if (i < 15) {
+        p.isBestSelling = true;
+      }
     });
 
     await Product.deleteMany({});

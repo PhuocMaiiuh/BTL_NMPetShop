@@ -117,7 +117,7 @@ const HeroBanner = () => {
               }`}
             >
               <Link
-                to="/san-pham"
+                to="/san-pham?category=cho"
                 className="group inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-bold text-white text-sm transition-all duration-300 hover:-translate-y-1"
                 style={{
                   background: 'linear-gradient(135deg, #e85a2b, #f59e0b)',

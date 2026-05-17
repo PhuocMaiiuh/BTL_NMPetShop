@@ -8,8 +8,6 @@ import HeroBanner from '../components/HeroBanner';
 import ProductCard from '../components/ProductCard';
 import CategoryCard from '../components/CategoryCard';
 import PromoBanner from '../components/PromoBanner';
-import ServiceCard from '../components/ServiceCard';
-import { fetchServices } from '../services/serviceApi';
 import { Link } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
@@ -17,6 +15,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import { fetchProducts } from '../services/productApi';
+import { fetchOrderStats } from '../services/orderApi';
 
 const categories = [
   {
@@ -109,9 +108,8 @@ const useCountUp = (target, duration = 2000) => {
 
 const HomePage = () => {
   const [bestSellers, setBestSellers] = useState([]);
-  const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [servicesLoading, setServicesLoading] = useState(true);
+  const [realStats, setRealStats] = useState({ customers: 0, products: 0, orders: 0 });
   
   const statsRef = useRef(null);
   const [statsVisible, setStatsVisible] = useState(false);
@@ -120,9 +118,9 @@ const HomePage = () => {
   const reviewRef = useRef(null);
   const [reviewVisible, setReviewVisible] = useState(false);
 
-  const { count: customers, setStarted: setStartCustomers } = useCountUp(5000);
-  const { count: products, setStarted: setStartProducts } = useCountUp(1200);
-  const { count: orders, setStarted: setStartOrders } = useCountUp(15000);
+  const { count: customers, setStarted: setStartCustomers } = useCountUp(realStats.customers || 5000);
+  const { count: products, setStarted: setStartProducts } = useCountUp(realStats.products || 1200);
+  const { count: orders, setStarted: setStartOrders } = useCountUp(realStats.orders || 15000);
   
   useEffect(() => {
     if (statsVisible) {
@@ -161,14 +159,18 @@ const HomePage = () => {
           setBestSellers(data.products);
         }
 
-        setServicesLoading(true);
-        const servData = await fetchServices();
-        setServices(servData.length ? servData : []);
+        const statsData = await fetchOrderStats().catch(() => null);
+        if (statsData) {
+          setRealStats({
+            customers: statsData.totalCustomers,
+            products: statsData.totalProducts,
+            orders: statsData.totalOrders
+          });
+        }
       } catch (err) {
         console.error('Home Page Load Error:', err);
       } finally {
         setLoading(false);
-        setServicesLoading(false);
       }
     };
     loadData();
@@ -256,73 +258,17 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ══════════ Our Services ══════════ */}
-      <section className="py-24 relative overflow-hidden">
-        {/* Decor */}
-        <div className="absolute top-1/2 left-0 w-96 h-96 bg-blue-500/10 blur-[120px] rounded-full pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-orange-500/5 blur-[150px] rounded-full pointer-events-none" />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16">
-            <div
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-5"
-              style={{
-                background: 'rgba(255,255,255,0.06)',
-                color: 'rgba(255,255,255,0.6)',
-                border: '1px solid rgba(255,255,255,0.1)',
-              }}
-            >
-              💎 DỊCH VỤ CAO CẤP
-            </div>
-            <h2 className="text-4xl font-black text-white mb-4">
-              Chăm Sóc{' '}
-              <span className="hero-gradient-text-orange">Toàn Diện</span>
-              <br />
-              Cho Thú Cưng
-            </h2>
-            <p className="text-white/50 max-w-md mx-auto text-sm">
-              Đội ngũ chuyên nghiệp với hơn 10 năm kinh nghiệm trong lĩnh vực chăm sóc thú cưng.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {servicesLoading ? (
-              [...Array(4)].map((_, i) => (
-                <div key={i} className="h-[400px] rounded-[2.5rem] bg-white/5 animate-pulse" />
-              ))
-            ) : services.length > 0 ? (
-              services.map((service) => (
-                <ServiceCard key={service._id} {...service} />
-              ))
-            ) : (
-              <div className="col-span-full py-20 text-center glass-card rounded-[2.5rem]">
-                <p className="text-white/30 italic text-sm">Đang cập nhật danh sách dịch vụ...</p>
-              </div>
-            )}
-          </div>
-          
-          <div className="mt-12 text-center">
-            <Link 
-              to="/lien-he"
-              className="inline-flex items-center gap-2 text-[#e85a2b] font-bold text-sm hover:underline"
-            >
-              Xem chi tiết bảng giá dịch vụ
-              <FiChevronRight size={16} />
-            </Link>
-          </div>
-        </div>
-      </section>
 
       {/* Top Selling Products */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-text-dark flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             Top 10 sản phẩm bán chạy
             <HiFire className="text-orange-500 animate-flame" size={28} />
           </h2>
           <Link
             to="/san-pham?filter=top-selling"
-            className="text-sm text-primary hover:text-primary-light font-medium transition-colors"
+            className="text-sm text-[#e85a2b] hover:text-[#f59e0b] font-medium transition-colors"
           >
             Xem tất cả →
           </Link>
@@ -595,7 +541,7 @@ const HomePage = () => {
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link
-              to="/san-pham"
+              to="/san-pham?category=cho"
               className="inline-flex items-center gap-2 px-9 py-4 rounded-full font-bold text-white text-sm transition-all duration-300 hover:-translate-y-1 hover:scale-105"
               style={{
                 background: 'linear-gradient(135deg, #e85a2b, #f59e0b)',

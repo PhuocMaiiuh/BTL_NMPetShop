@@ -12,14 +12,14 @@ export const useCart = () => {
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState(() => {
-    const savedCart = localStorage.getItem('cart');
+    const savedCart = sessionStorage.getItem('cart');
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
   const [selectedPromo, setSelectedPromo] = useState(null);
 
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cartItems));
+    sessionStorage.setItem('cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
   const addToCart = (product, quantity = 1) => {

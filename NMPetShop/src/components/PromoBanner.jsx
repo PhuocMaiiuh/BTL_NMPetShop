@@ -1,6 +1,10 @@
-import { Link } from 'react-router-dom';
-import { FiArrowRight } from 'react-icons/fi';
+import { Link, useNavigate } from 'react-router-dom';
+import { FiArrowRight, FiLoader } from 'react-icons/fi';
 import { FaPaw } from 'react-icons/fa';
+import { useState } from 'react';
+import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
+import { fetchProducts } from '../services/productApi';
 
 const combos = [
   {
@@ -50,6 +54,48 @@ const combos = [
 ];
 
 const PromoBanner = () => {
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
+  const [loadingCombo, setLoadingCombo] = useState(null);
+
+  const handleBuyCombo = async (e, combo) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      navigate('/dang-nhap');
+      return;
+    }
+    
+    setLoadingCombo(combo.id);
+    try {
+      let itemsToAdd = [];
+      if (combo.id === 1) {
+        const res = await fetchProducts({ search: 'răng', limit: 2 });
+        itemsToAdd = res.products;
+      } else if (combo.id === 2) {
+        const res1 = await fetchProducts({ search: 'hạt', limit: 1 });
+        const res2 = await fetchProducts({ search: 'bát', limit: 1 });
+        itemsToAdd = [...res1.products, ...res2.products];
+      } else if (combo.id === 3) {
+        const res1 = await fetchProducts({ search: 'tắm', limit: 1 });
+        const res2 = await fetchProducts({ search: 'lược', limit: 1 });
+        itemsToAdd = [...res1.products, ...res2.products];
+      } else if (combo.id === 4) {
+        const res = await fetchProducts({ category: 'do-choi', limit: 4 });
+        itemsToAdd = res.products;
+      }
+
+      itemsToAdd.forEach(item => {
+        if (item) addToCart(item, 1);
+      });
+      navigate('/gio-hang');
+    } catch (err) {
+      console.error('Failed to create combo', err);
+    } finally {
+      setLoadingCombo(null);
+    }
+  };
+
   return (
     <section className="py-16 relative" style={{ background: 'transparent' }}>
       <FaPaw className="absolute top-[30%] left-[6%] text-[#a8c5ff]/10 animate-float pointer-events-none" size={24} style={{ animationDelay: '0.8s', animationDuration: '4.8s' }} />
@@ -104,16 +150,26 @@ const PromoBanner = () => {
               <div className="p-6 pb-4">
                 <h3 className="text-lg font-black text-white mb-2 leading-tight drop-shadow">{combo.title}</h3>
                 <p className="text-white/75 text-xs leading-relaxed mb-5">{combo.desc}</p>
-                <Link
-                  to={combo.path}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-white group/btn"
+                <button
+                  onClick={(e) => handleBuyCombo(e, combo)}
+                  disabled={loadingCombo === combo.id}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-white group/btn disabled:opacity-50"
                 >
-                  Mua ngay
-                  <FiArrowRight
-                    size={12}
-                    className="transition-transform duration-200 group-hover/btn:translate-x-1.5"
-                  />
-                </Link>
+                  {loadingCombo === combo.id ? (
+                    <>
+                      Đang tạo...
+                      <FiLoader size={12} className="animate-spin" />
+                    </>
+                  ) : (
+                    <>
+                      Mua ngay
+                      <FiArrowRight
+                        size={12}
+                        className="transition-transform duration-200 group-hover/btn:translate-x-1.5"
+                      />
+                    </>
+                  )}
+                </button>
               </div>
 
               {/* Image */}

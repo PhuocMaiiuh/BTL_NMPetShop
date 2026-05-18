@@ -9,6 +9,7 @@ const promotionRoutes = require('./routes/promotionRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
+// Trigger reload for new env config
 const app  = express();
 const PORT = process.env.PORT || 5000;
 

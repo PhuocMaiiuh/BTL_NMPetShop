@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { FiGrid, FiList, FiChevronDown, FiLoader } from 'react-icons/fi';
-import { fetchProducts, fetchProductMeta } from '../services/productApi';
+import { fetchProducts, fetchProductMeta, fetchTopSellingProducts } from '../services/productApi';
 
 const VISIBLE_LIMIT = 5;
 const ITEMS_PER_PAGE = 12;
@@ -117,18 +117,24 @@ const ProductListPage = () => {
     setError(null);
     try {
       const sortMap = { 'Giá tăng dần': 'price_asc', 'Giá giảm dần': 'price_desc' };
-      const data = await fetchProducts({
-        category: categoryParam,
-        filter: filterParam,
-        search: searchParam,
-        subCategories: selectedCategories,
-        brands: selectedBrands,
-        priceMin,
-        priceMax,
-        page: currentPage,
-        limit: filterParam === 'top-selling' ? 10 : ITEMS_PER_PAGE,
-        sort: sortMap[sortBy] || '',
-      });
+      let data;
+      if (filterParam === 'top-selling') {
+        // Use dedicated endpoint that aggregates real order data
+        data = await fetchTopSellingProducts();
+      } else {
+        data = await fetchProducts({
+          category: categoryParam,
+          filter: filterParam,
+          search: searchParam,
+          subCategories: selectedCategories,
+          brands: selectedBrands,
+          priceMin,
+          priceMax,
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
+          sort: sortMap[sortBy] || '',
+        });
+      }
       setProducts(data.products);
       setTotal(data.total);
       setTotalPages(data.totalPages);

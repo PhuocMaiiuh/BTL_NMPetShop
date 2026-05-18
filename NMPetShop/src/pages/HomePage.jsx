@@ -14,7 +14,7 @@ import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import { fetchProducts } from '../services/productApi';
+import { fetchProducts, fetchTopSellingProducts } from '../services/productApi';
 import { fetchOrderStats } from '../services/orderApi';
 
 const categories = [
@@ -150,9 +150,10 @@ const HomePage = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await fetchProducts({ limit: 10, filter: 'top-selling' });
-        // If no top-selling products found, just get the first 10 active ones
+        // Use dedicated endpoint that aggregates real order sales data
+        const data = await fetchTopSellingProducts();
         if (data.products.length === 0) {
+          // Fallback: get top 10 by reviews/rating if no order data
           const fallback = await fetchProducts({ limit: 10 });
           setBestSellers(fallback.products);
         } else {

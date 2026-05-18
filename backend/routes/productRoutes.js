@@ -4,14 +4,16 @@ const {
   getProducts,
   getProductMeta,
   getProductById,
+  getTopSelling,
   createProduct,
   updateProduct,
   toggleProductStatus,
   deleteProduct,
 } = require('../controllers/productController');
 
-// NOTE: /meta must be declared BEFORE /:id to avoid conflict
+// NOTE: /meta and /top-selling must be declared BEFORE /:id to avoid conflict
 router.get('/meta', getProductMeta);
+router.get('/top-selling', getTopSelling);
 
 router.route('/')
   .get(getProducts)

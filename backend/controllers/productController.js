@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const Order   = require('../models/Order');
 
 // Keyword map: URL param → Vietnamese keyword
 const CATEGORY_KEYWORDS = {
@@ -225,10 +226,73 @@ const deleteProduct = async (req, res, next) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────
+// GET /api/products/top-selling
+// Aggregate from Orders to find the most-purchased products
+// ─────────────────────────────────────────────────────────────
+const getTopSelling = async (req, res, next) => {
+  const TOP_N = 10;
+  try {
+    // Step 1: Aggregate orders → sum quantity sold per productId
+    const salesData = await Order.aggregate([
+      // Only count orders that are not cancelled
+      { $match: { status: { $ne: 'Cancelled' } } },
+      // Unwind the items array
+      { $unwind: '$items' },
+      // Group by productId and sum quantities
+      {
+        $group: {
+          _id: '$items.productId',
+          totalSold: { $sum: '$items.quantity' },
+        },
+      },
+      // Sort by most sold
+      { $sort: { totalSold: -1 } },
+      { $limit: TOP_N },
+    ]);
+
+    let products = [];
+
+    if (salesData.length > 0) {
+      // Step 2: Fetch product details for the top IDs
+      const topIds = salesData.map((s) => s._id).filter((id) => id != null);
+      const productMap = await Product.find(
+        { id: { $in: topIds }, active: true },
+        { __v: 0 }
+      ).lean();
+
+      // Step 3: Merge sales count into product and preserve order
+      const byId = {};
+      productMap.forEach((p) => { byId[p.id] = p; });
+      products = topIds
+        .map((id) => byId[id] ? { ...byId[id], totalSold: salesData.find(s => s._id === id)?.totalSold || 0 } : null)
+        .filter(Boolean);
+    }
+
+    // Fallback: if no order data, return products with highest reviews/rating
+    if (products.length === 0) {
+      products = await Product.find({ active: true })
+        .sort({ reviews: -1, rating: -1 })
+        .limit(TOP_N)
+        .lean();
+    }
+
+    res.json({
+      products,
+      total: products.length,
+      page: 1,
+      totalPages: 1,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getProducts,
   getProductMeta,
   getProductById,
+  getTopSelling,
   createProduct,
   updateProduct,
   toggleProductStatus,

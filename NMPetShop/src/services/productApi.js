@@ -98,3 +98,13 @@ export async function toggleProductStatus(id) {
   if (!res.ok) throw new Error('Failed to toggle product status');
   return res.json();
 }
+
+/**
+ * Fetch top-selling products (aggregated from orders)
+ * Returns up to 10 products sorted by total quantity sold
+ */
+export async function fetchTopSellingProducts() {
+  const res = await fetch(`${BASE}/products/top-selling`);
+  if (!res.ok) throw new Error('Failed to fetch top-selling products');
+  return res.json(); // { products, total, page, totalPages }
+}
